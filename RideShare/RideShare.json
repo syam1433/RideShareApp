@@ -1,0 +1,226 @@
+{
+  "workflowId": "RideShare_eKyc",
+  "version": 1,
+  "description": "This workflow is for verifying the driver profile for a ride-sharing platform.",
+  "entryStepId": "phone_otp",
+  "steps": [
+    {
+      "id": "phone_otp",
+      "label": "Phone Number Verification",
+      "moduleId": "otp_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "phoneFieldKey": "driver.phone",
+        "countryCode": "+91",
+        "otpLength": 6,
+        "maxAttempts": 3
+      },
+      "transitions": {
+        "onSuccess": "basic_details",
+        "onFailure": "manual_review_due_to_otp_failure"
+      }
+    },
+    {
+      "id": "basic_details",
+      "label": "Basic Details Verification",
+      "moduleId": "basic_details_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "fields": [
+          "firstName",
+          "lastName",
+          "dob",
+          "email",
+          "pan"
+        ],
+        "validationRules": {
+          "firstName": {
+            "required": true,
+            "maxLength": 50
+          },
+          "dob": {
+            "required": true,
+            "type": "date",
+            "minAge": 21
+          },
+          "pan": {
+            "required": true,
+            "pattern": "[A-Z]{5}[0-9]{4}[A-Z]{1}"
+          }
+        }
+      },
+      "transitions": {
+        "onSuccess": "dl_upload",
+        "onValidationError": "basic_details",
+        "onUserCancel": "exit_workflow"
+      }
+    },
+    {
+      "id": "dl_upload",
+      "label": "Driving License Upload",
+      "moduleId": "dl_upload_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "acceptedFormats": ["jpg", "jpeg", "png", "pdf"],
+        "maxFileSizeMb": 5,
+        "requiredSides": ["FRONT", "BACK"]
+      },
+      "transitions": {
+        "onSuccess": "selfie_capture",
+        "onLowQuality": "manual_review_due_to_dl_issue",
+        "onFailure": "dl_upload_retry"
+      }
+    },
+    {
+      "id": "dl_upload_retry",
+      "label": "Retry Driving License Upload",
+      "moduleId": "dl_upload_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "acceptedFormats": ["jpg", "jpeg", "png"],
+        "maxFileSizeMb": 5,
+        "requiredSides": ["FRONT", "BACK"],
+        "maxRetries": 1
+      },
+      "transitions": {
+        "onSuccess": "selfie_capture",
+        "onFailure": "manual_review_due_to_dl_issue"
+      }
+    },
+    {
+      "id": "selfie_capture",
+      "label": "Selfie Capture",
+      "moduleId": "selfie_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "minLivenessScore": 0.6,
+        "faceMatchThreshold": 0.7
+      },
+      "transitions": {
+        "onSuccess": "final_approved",
+        "onLivenessFail": "selfie_retry",
+        "onFaceMismatch": "manual_review_due_to_face_mismatch"
+      }
+    },
+    {
+      "id": "selfie_retry",
+      "label": "Retry Selfie Capture",
+      "moduleId": "selfie_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "minLivenessScore": 0.6,
+        "faceMatchThreshold": 0.7,
+        "maxRetries": 1
+      },
+      "transitions": {
+        "onSuccess": "final_approved",
+        "onFailure": "manual_review_due_to_face_mismatch"
+      }
+    },
+    {
+      "id": "final_approved",
+      "label": "Driver Verification Approved",
+      "moduleId": "final_status_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "status": "APPROVED",
+        "message": "Your driver profile has been successfully verified!",
+        "nextBestAction": "SHOW_DASHBOARD"
+      },
+      "transitions": {
+        "onContinue": "exit_workflow"
+      }
+    },
+    {
+      "id": "manual_review_due_to_otp_failure",
+      "label": "Manual Review - OTP Failure",
+      "moduleId": "manual_review_module",
+      "type": "BACKOFFICE",
+      "inputs": {
+        "reasonCode": "OTP_FAILURE",
+        "priority": "MEDIUM"
+      },
+      "transitions": {
+        "onCompletedByAgent": "final_manual_review_status"
+      }
+    },
+    {
+      "id": "manual_review_due_to_dl_issue",
+      "label": "Manual Review - DL Upload Issue",
+      "moduleId": "manual_review_module",
+      "type": "BACKOFFICE",
+      "inputs": {
+        "reasonCode": "DL_ISSUE",
+        "priority": "HIGH"
+      },
+      "transitions": {
+        "onCompletedByAgent": "final_manual_review_status"
+      }
+    },
+    {
+      "id": "manual_review_due_to_face_mismatch",
+      "label": "Manual Review - Face Mismatch",
+      "moduleId": "manual_review_module",
+      "type": "BACKOFFICE",
+      "inputs": {
+        "reasonCode": "FACE_MISMATCH",
+        "priority": "HIGH"
+      },
+      "transitions": {
+        "onCompletedByAgent": "final_manual_review_status"
+      }
+    },
+    {
+      "id": "final_manual_review_status",
+      "label": "Final Status After Manual Review",
+      "moduleId": "final_status_module",
+      "type": "USER_INTERACTION",
+      "inputs": {
+        "status": "PENDING_OR_REJECTED",
+        "message": "Your documents are under manual review or have been rejected. Please contact support if needed.",
+        "nextBestAction": "CONTACT_SUPPORT"
+      },
+      "transitions": {
+        "onContinue": "exit_workflow"
+      }
+    },
+    {
+      "id": "exit_workflow",
+      "label": "Exit Workflow",
+      "moduleId": "noop_module",
+      "type": "SYSTEM",
+      "inputs": {},
+      "transitions": {}
+    }
+  ],
+  "modules": {
+    "otp_module": {
+      "description": "Handles phone number OTP verification.",
+      "sdk": "WEB_AND_MOBILE"
+    },
+    "basic_details_module": {
+      "description": "Collects and validates basic driver information.",
+      "sdk": "WEB_AND_MOBILE"
+    },
+    "dl_upload_module": {
+      "description": "Uploads and validates a driving license.",
+      "sdk": "WEB_AND_MOBILE"
+    },
+    "selfie_module": {
+      "description": "Captures selfie and performs basic checks.",
+      "sdk": "WEB_AND_MOBILE"
+    },
+    "final_status_module": {
+      "description": "Displays final verification status to the driver.",
+      "sdk": "WEB_AND_MOBILE"
+    },
+    "manual_review_module": {
+      "description": "Queues driver profile for backoffice manual review.",
+      "sdk": "BACKOFFICE"
+    },
+    "noop_module": {
+      "description": "No operation module used to end the workflow.",
+      "sdk": "SYSTEM"
+    }
+  }
+}
