@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import {
   Search,
   Car,
-  Leaf,
   Wallet,
   TrendingUp,
   Calendar,
@@ -30,6 +29,7 @@ import {
 
 const UserDashboard = () => {
   const { user } = useAuth();
+  const userId = user?.id || user?._id;
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +64,7 @@ const UserDashboard = () => {
 
     // Initialize socket connection
     initSocket();
-    if (user?.id) joinUserDashboard(user.id);
+    if (userId) joinUserDashboard(userId);
 
     // Define handlers to avoid stale closures
     const handleOtpSent = ({ rideId, otp }) => {
@@ -107,7 +107,7 @@ const UserDashboard = () => {
       removeOtpListener();
       removeRideStatusListener();
     };
-  }, [user?.id]);
+  }, [userId]);
 
   // Categorize bookings
   const activeRide = bookings.find((b) =>
@@ -140,37 +140,6 @@ const UserDashboard = () => {
         .reduce((sum, b) => sum + (b.ride.driver.rating || 0), 0) / completedCount
       ).toFixed(1)
     : 0;
-
-  const stats = [
-    {
-      label: "Rides Taken",
-      value: completedCount.toString(),
-      icon: Car,
-      color: "bg-blue-500",
-      change: completedCount > 0 ? `+${completedCount} total` : "Start riding!",
-    },
-    {
-      label: "Money Spent",
-      value: `₹${totalSpent.toLocaleString("en-IN")}`,
-      icon: TrendingUp,
-      color: "bg-green-500",
-      change: "on rides",
-    },
-    {
-      label: "Average Rating",
-      value: averageRating > 0 ? averageRating : "N/A",
-      icon: Star,
-      color: "bg-yellow-500",
-      change: "driver rating",
-    },
-    {
-      label: "CO₂ Saved",
-      value: `${(completedCount * 2.5).toFixed(1)} kg`,
-      icon: Leaf,
-      color: "bg-emerald-500",
-      change: "environmental impact",
-    },
-  ];
 
   if (loading) {
     return (
@@ -221,32 +190,43 @@ const UserDashboard = () => {
           </button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div
-                key={index}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div
-                    className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}
-                  >
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
-                    {stat.change}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                  {stat.value}
-                </h3>
-                <p className="text-sm text-gray-600">{stat.label}</p>
+        {/* Ride Activity Card */}
+        <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-2xl font-bold mb-2">Ride Activity</h3>
+              <p className="text-blue-100">Your current booking overview</p>
+            </div>
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+              <Wallet className="w-8 h-8" />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-100">Active Ride</span>
+                <CheckCircle className="w-5 h-5" />
               </div>
-            );
-          })}
+              <p className="text-3xl font-bold">{activeRide ? 1 : 0}</p>
+            </div>
+
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-100">Upcoming</span>
+                <Calendar className="w-5 h-5" />
+              </div>
+              <p className="text-3xl font-bold">{upcomingRides.length}</p>
+            </div>
+
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-100">Completed</span>
+                <Car className="w-5 h-5" />
+              </div>
+              <p className="text-3xl font-bold">{completedCount}</p>
+            </div>
+          </div>
         </div>
 
         {/* Active Ride Alert */}
@@ -492,73 +472,6 @@ const UserDashboard = () => {
             >
               Find Rides Now
             </Link>
-          </div>
-        )}
-
-        {/* Spending Summary */}
-        {completedCount > 0 && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Spending Summary
-              </h2>
-              <div className="text-sm text-gray-600">
-                Last {Math.min(recentRides.length, 10)} rides
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg p-4 border border-green-100">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Total Spent</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ₹{totalSpent.toLocaleString("en-IN")}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Across {completedCount} completed rides
-                </p>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 border border-green-100">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Car className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Average per Ride</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ₹{completedCount > 0 ? (totalSpent / completedCount).toFixed(0) : 0}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Cost efficiency
-                </p>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 border border-green-100">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Star className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Driver Rating</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {averageRating > 0 ? averageRating : "N/A"}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Average driver rating
-                </p>
-              </div>
-            </div>
           </div>
         )}
 

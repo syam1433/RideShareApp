@@ -1,15 +1,53 @@
 const mongoose = require("mongoose");
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log("MongoDB Connected");
+const MAX_DB_RETRIES = 5;
+const RETRY_DELAY_MS = 3000;
 
-    // Create database indexes for better performance
-    await createIndexes();
+const connectDB = async () => {
+  for (let attempt = 1; attempt <= MAX_DB_RETRIES; attempt += 1) {
+    try {
+      await mongoose.connect(process.env.MONGO_URI, {
+        serverSelectionTimeoutMS: 10000,
+      });
+
+      console.log("MongoDB Connected");
+
+      // Create database indexes for better performance
+      await createIndexes();
+      return;
+    } catch (error) {
+      console.error(`DB connection attempt ${attempt}/${MAX_DB_RETRIES} failed:`, error.message);
+
+      // Helpful hint for intermittent ISP/router DNS blocks on Atlas SRV lookup.
+      if (error.code === "EREFUSED" && error.syscall === "querySrv") {
+        console.error(
+          "DNS SRV lookup was refused. Check internet/router DNS, allow MongoDB Atlas domains, or switch DNS to 8.8.8.8 / 1.1.1.1."
+        );
+      }
+
+      if (attempt === MAX_DB_RETRIES) {
+        process.exit(1);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    }
+  }
+};
+
+const createIndexSafe = async (collection, spec, options) => {
+  try {
+    await collection.createIndex(spec, options);
   } catch (error) {
-    console.error("DB Error:", error);
-    process.exit(1);
+    // Ignore conflicts where an equivalent index already exists with another auto-generated name.
+    const isIndexConflict =
+      Number(error.code) === 85 ||
+      error.codeName === "IndexOptionsConflict" ||
+      String(error.message || "").includes("Index already exists with a different name");
+
+    if (isIndexConflict) {
+      return;
+    }
+    throw error;
   }
 };
 
@@ -21,24 +59,24 @@ const createIndexes = async () => {
     const rideCollection = db.collection('rides');
 
     // Compound index for common queries
-    await rideCollection.createIndex(
+    await createIndexSafe(rideCollection,
       { status: 1, dateTime: 1, seatsAvailable: -1 },
       { name: "ride_status_datetime_seats" }
     );
 
     // Text index for location search
-    await rideCollection.createIndex(
+    await createIndexSafe(rideCollection,
       { from: "text", to: "text" },
       { name: "ride_locations_text" }
     );
 
     // Geospatial indexes (already defined in schema)
-    await rideCollection.createIndex(
+    await createIndexSafe(rideCollection,
       { pickupLocation: "2dsphere" },
       { name: "pickup_location_2dsphere" }
     );
 
-    await rideCollection.createIndex(
+    await createIndexSafe(rideCollection,
       { destinationLocation: "2dsphere" },
       { name: "destination_location_2dsphere" }
     );
@@ -46,12 +84,12 @@ const createIndexes = async () => {
     // Booking collection indexes
     const bookingCollection = db.collection('bookings');
 
-    await bookingCollection.createIndex(
+    await createIndexSafe(bookingCollection,
       { passenger: 1, status: 1 },
       { name: "booking_passenger_status" }
     );
 
-    await bookingCollection.createIndex(
+    await createIndexSafe(bookingCollection,
       { ride: 1, status: 1 },
       { name: "booking_ride_status" }
     );
@@ -59,12 +97,12 @@ const createIndexes = async () => {
     // User collection indexes
     const userCollection = db.collection('users');
 
-    await userCollection.createIndex(
+    await createIndexSafe(userCollection,
       { email: 1 },
       { name: "user_email_unique", unique: true }
     );
 
-    await userCollection.createIndex(
+    await createIndexSafe(userCollection,
       { phone: 1 },
       { name: "user_phone_unique", unique: true }
     );

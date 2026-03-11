@@ -3,6 +3,20 @@ const { generateOTP, sendOTP } = require("../utils/generateOTP");
 const User = require("../models/User");
 const { notifyOTP, notifyRideStatusUpdate } = require("../Config/socket");
 
+const DEFAULT_PICKUP_COORDS = [80.4365, 16.3067]; // Vijayawada [lng, lat]
+const DEFAULT_DEST_COORDS = [80.4365, 16.3067]; // Vijayawada [lng, lat]
+
+const isValidCoordinatePair = (lat, lng) => {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+};
+
 // Get all rides
 exports.getAllRides = async (req, res) => {
   try {
@@ -98,28 +112,24 @@ exports.createRide = async (req, res) => {
       !seatsAvailable ||
       !dlNumber?.trim() ||
       !vehicleNumber?.trim() ||
-      !vehicleModel?.trim() ||
-      pickupLat === undefined ||
-      pickupLng === undefined ||
-      destinationLat === undefined ||
-      destinationLng === undefined
+      !vehicleModel?.trim()
     ) {
-      return res.status(400).json({ message: "All required fields including coordinates must be filled" });
+      return res.status(400).json({ message: "All required fields must be filled" });
     }
 
-    // Validate coordinates
+    // Coordinates are optional in request; fallback defaults are used when missing/invalid.
     const pickupLatitude = parseFloat(pickupLat);
     const pickupLongitude = parseFloat(pickupLng);
     const destLatitude = parseFloat(destinationLat);
     const destLongitude = parseFloat(destinationLng);
 
-    if (
-      isNaN(pickupLatitude) || isNaN(pickupLongitude) || isNaN(destLatitude) || isNaN(destLongitude) ||
-      pickupLatitude < -90 || pickupLatitude > 90 || pickupLongitude < -180 || pickupLongitude > 180 ||
-      destLatitude < -90 || destLatitude > 90 || destLongitude < -180 || destLongitude > 180
-    ) {
-      return res.status(400).json({ message: "Invalid coordinates provided" });
-    }
+    const pickupCoordinates = isValidCoordinatePair(pickupLatitude, pickupLongitude)
+      ? [pickupLongitude, pickupLatitude]
+      : DEFAULT_PICKUP_COORDS;
+
+    const destinationCoordinates = isValidCoordinatePair(destLatitude, destLongitude)
+      ? [destLongitude, destLatitude]
+      : DEFAULT_DEST_COORDS;
 
     const ride = new Ride({
       driver: req.user.id,
@@ -127,16 +137,17 @@ exports.createRide = async (req, res) => {
       to: to.trim(),
       pickupLocation: {
         type: 'Point',
-        coordinates: [pickupLongitude, pickupLatitude] // [lng, lat]
+        coordinates: pickupCoordinates // [lng, lat]
       },
       destinationLocation: {
         type: 'Point',
-        coordinates: [destLongitude, destLatitude] // [lng, lat]
+        coordinates: destinationCoordinates // [lng, lat]
       },
       viaPoints: viaPoints.filter((p) => p.trim()),
       dateTime: new Date(dateTime),
       pricePerSeat: Number(pricePerSeat),
       seatsAvailable: Number(seatsAvailable),
+      seatCapacity: Number(seatsAvailable),
       vehicleType,
       dlNumber: dlNumber.trim(),
       vehicleNumber: vehicleNumber.trim(),
@@ -205,7 +216,7 @@ exports.updateRideStatus = async (req, res) => {
 
 exports.verifyPassengerOTP = async (req, res) => {
   try {
-    const { otp } = req.body;
+    const { otp, passengerId } = req.body;
     const ride = await Ride.findById(req.params.id);
 
     if (!ride) return res.status(404).json({ message: "Ride not found" });
@@ -219,25 +230,55 @@ exports.verifyPassengerOTP = async (req, res) => {
       return res.status(400).json({ message: "No OTP generated" });
     }
 
-    if (otp !== ride.otp) {
+    if (String(otp || "") !== String(ride.otp)) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // Mark current user (passenger) as verified
-    // Note: In real app, you'd pass passengerId from frontend, but for simplicity:
-    // Assume driver verifies one by one, and we mark one at a time
-    // For MVP: add the logged-in user if not already verified (but better: pass passengerId)
+    const passengerIds = (ride.passengers || []).map((id) => id.toString());
+    const verifiedPassengerIds = (ride.verifiedPassengers || []).map((id) => id.toString());
 
-    const passengerId = req.user.id; // ← assuming passenger is logged in (you may need to change this)
-
-    if (!ride.verifiedPassengers.includes(passengerId)) {
-      ride.verifiedPassengers.push(passengerId);
-      await ride.save();
+    if (passengerIds.length === 0) {
+      return res.status(400).json({ message: "No passengers booked for this ride" });
     }
+
+    let targetPassengerId = passengerId ? String(passengerId) : null;
+
+    if (targetPassengerId) {
+      if (!passengerIds.includes(targetPassengerId)) {
+        return res.status(400).json({ message: "Selected passenger is not part of this ride" });
+      }
+      if (verifiedPassengerIds.includes(targetPassengerId)) {
+        return res.status(400).json({
+          message: "Passenger already verified",
+          verifiedCount: ride.verifiedPassengers.length,
+          totalBooked: ride.passengers.length,
+        });
+      }
+    } else {
+      targetPassengerId = passengerIds.find((id) => !verifiedPassengerIds.includes(id));
+      if (!targetPassengerId) {
+        return res.status(400).json({
+          message: "All passengers are already verified",
+          verifiedCount: ride.verifiedPassengers.length,
+          totalBooked: ride.passengers.length,
+        });
+      }
+    }
+
+    ride.verifiedPassengers.push(targetPassengerId);
+
+    // Keep boarded passengers in sync with verified passengers for fare/finish calculations.
+    const boardedPassengerIds = (ride.boardedPassengers || []).map((id) => id.toString());
+    if (!boardedPassengerIds.includes(targetPassengerId)) {
+      ride.boardedPassengers.push(targetPassengerId);
+    }
+
+    await ride.save();
 
     res.json({
       success: true,
       message: "Passenger verified",
+      passengerId: targetPassengerId,
       verifiedCount: ride.verifiedPassengers.length,
       totalBooked: ride.passengers.length
     });
@@ -256,8 +297,16 @@ exports.searchNearbyRides = async (req, res) => {
 
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
-    const searchRadius = parseFloat(radius) * 1000; // Convert km to meters
+    const radiusKm = parseFloat(radius);
     const requiredSeats = parseInt(passengers) || 1;
+
+    if (!Number.isFinite(radiusKm) || radiusKm <= 0) {
+      return res.status(400).json({ message: "Radius must be a positive number in km" });
+    }
+
+    // Keep search performant and predictable.
+    const normalizedRadiusKm = Math.min(radiusKm, 50);
+    const searchRadius = normalizedRadiusKm * 1000; // Convert km to meters
 
     if (isNaN(latitude) || isNaN(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       return res.status(400).json({ message: "Invalid latitude or longitude" });
@@ -267,6 +316,7 @@ exports.searchNearbyRides = async (req, res) => {
     const rides = await Ride.find({
       status: { $in: ["upcoming", "active"] },
       seatsAvailable: { $gte: requiredSeats },
+      dateTime: { $gte: new Date() },
       pickupLocation: {
         $near: {
           $geometry: {
@@ -285,6 +335,10 @@ exports.searchNearbyRides = async (req, res) => {
     const ridesWithDistance = rides.map(ride => {
       const rideObj = ride.toObject();
 
+      if (!Array.isArray(ride.pickupLocation?.coordinates) || ride.pickupLocation.coordinates.length !== 2) {
+        return null;
+      }
+
       // Calculate distance using Haversine formula (approximate)
       const distance = calculateDistance(
         latitude, longitude,
@@ -294,13 +348,13 @@ exports.searchNearbyRides = async (req, res) => {
 
       rideObj.distance = Math.round(distance * 10) / 10; // Round to 1 decimal place
       return rideObj;
-    });
+    }).filter(Boolean);
 
     res.json({
       success: true,
       count: ridesWithDistance.length,
       searchLocation: { lat: latitude, lng: longitude },
-      radius: parseFloat(radius),
+      radius: normalizedRadiusKm,
       rides: ridesWithDistance
     });
   } catch (err) {

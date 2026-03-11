@@ -10,6 +10,7 @@ import {
   LogOut,
   Wallet,
   Shield,
+  Navigation,
   Menu,
   X,
 } from "lucide-react";
@@ -29,6 +30,7 @@ const Sidebar = () => {
   const userMenuItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { name: "Find Ride", icon: Search, path: "/find-ride" },
+    { name: "Nearby Rides", icon: Navigation, path: "/nearby-rides" },
     { name: "My Rides", icon: Car, path: "/dashboard" },
     { name: "Profile", icon: User, path: "/profile" },
     { name: "Payments", icon: CreditCard, path: "/dashboard" },

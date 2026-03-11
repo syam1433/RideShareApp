@@ -16,6 +16,46 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+const geocodeWithNominatim = async (address) => {
+  const query = encodeURIComponent(address);
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=3&q=${query}`,
+    {
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to resolve location");
+  }
+
+  const results = await response.json();
+
+  if (!Array.isArray(results) || results.length === 0) {
+    throw new Error("Location not found");
+  }
+
+  return {
+    lat: Number(results[0].lat),
+    lng: Number(results[0].lon),
+  };
+};
+
+const geocodeAddress = async (address) => {
+  const trimmedAddress = address.trim();
+  const fallbackAddress = /india/i.test(trimmedAddress)
+    ? trimmedAddress
+    : `${trimmedAddress}, India`;
+
+  try {
+    return await geocodeWithNominatim(trimmedAddress);
+  } catch (_) {
+    return await geocodeWithNominatim(fallbackAddress);
+  }
+};
+
 const PostRide = () => {
   const navigate = useNavigate();
 
@@ -81,6 +121,18 @@ const PostRide = () => {
     setLoading(true);
 
     try {
+      const [pickupGeo, destinationGeo] = await Promise.allSettled([
+        geocodeAddress(formData.from.trim()),
+        geocodeAddress(formData.to.trim()),
+      ]);
+
+      const pickupCoords = pickupGeo.status === "fulfilled" ? pickupGeo.value : null;
+      const destinationCoords = destinationGeo.status === "fulfilled" ? destinationGeo.value : null;
+
+      if (!pickupCoords || !destinationCoords) {
+        toast("Location coordinates could not be resolved. Ride will be posted with default map location.");
+      }
+
       const payload = {
         from: formData.from.trim(),
         to: formData.to.trim(),
@@ -93,6 +145,12 @@ const PostRide = () => {
         vehicleNumber: formData.vehicleNumber.trim(),
         vehicleModel: formData.vehicleModel.trim(),
         safetyNote: formData.safetyNote.trim() || "",
+        ...(pickupCoords
+          ? { pickupLat: pickupCoords.lat, pickupLng: pickupCoords.lng }
+          : {}),
+        ...(destinationCoords
+          ? { destinationLat: destinationCoords.lat, destinationLng: destinationCoords.lng }
+          : {}),
       };
 
       const res = await API.post("/rides", payload);
@@ -100,7 +158,7 @@ const PostRide = () => {
       toast.success("Ride posted successfully! It will auto-expire in 24 hours.");
       navigate("/driver-dashboard");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to post ride");
+      toast.error(err.response?.data?.message || err.message || "Failed to post ride");
     } finally {
       setLoading(false);
     }

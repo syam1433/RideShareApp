@@ -4,8 +4,9 @@ import {
   useJsApiLoader,
   Marker,
   DirectionsRenderer,
-  Polyline,
 } from "@react-google-maps/api";
+
+const GOOGLE_MAP_LIBRARIES = ["places", "geometry"];
 
 const containerStyle = {
   width: "100%",
@@ -15,6 +16,16 @@ const containerStyle = {
 const defaultCenter = {
   lat: 16.3067, // Vijayawada coordinates
   lng: 80.4365,
+};
+
+const normalizeLatLng = (value) => {
+  if (!value || typeof value !== "object") return null;
+
+  const lat = Number(value.lat);
+  const lng = Number(value.lng);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 };
 
 const MapComponent = ({
@@ -29,7 +40,7 @@ const MapComponent = ({
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ['places', 'geometry'],
+    libraries: GOOGLE_MAP_LIBRARIES,
   });
 
   const [map, setMap] = useState(null);
@@ -109,7 +120,18 @@ const MapComponent = ({
 
   // Calculate directions with modern API
   const calculateRoute = useCallback(async () => {
-    if (!from || !to || !window.google || !window.google.maps) return;
+    if (!window.google || !window.google.maps || !showDirections) return;
+
+    const normalizedPickup = normalizeLatLng(pickupLocation);
+    const normalizedDestination = normalizeLatLng(destinationLocation);
+    const normalizedUserLocation = normalizeLatLng(userLocation);
+    const hasAddressRoute = Boolean(from?.trim() && to?.trim());
+    const hasCoordinateRoute = Boolean(normalizedPickup && normalizedDestination);
+
+    const fallbackOrigin = normalizedPickup || normalizedUserLocation || from;
+    const fallbackDestination = normalizedDestination || to;
+
+    if (!hasAddressRoute && !hasCoordinateRoute && !(fallbackOrigin && fallbackDestination)) return;
 
     try {
       setDirectionsError(null);
@@ -118,8 +140,8 @@ const MapComponent = ({
       const directionsService = new window.google.maps.DirectionsService();
 
       const request = {
-        origin: from,
-        destination: to,
+        origin: hasCoordinateRoute ? normalizedPickup : fallbackOrigin,
+        destination: hasCoordinateRoute ? normalizedDestination : fallbackDestination,
         travelMode: window.google.maps.TravelMode.DRIVING,
         optimizeWaypoints: false,
         provideRouteAlternatives: false,
@@ -140,16 +162,16 @@ const MapComponent = ({
       }
     } catch (error) {
       console.error("Directions error:", error);
-      setDirectionsError("Could not calculate route. Please check locations.");
+      setDirectionsResponse(null);
+      setDirectionsError("Could not calculate road route for these locations.");
     }
-  }, [from, to]);
+  }, [from, to, pickupLocation, destinationLocation, showDirections, userLocation]);
 
-  // Calculate route when locations change
+  // Re-calculate route when dependencies change
   useEffect(() => {
-    if (showDirections && from && to && isLoaded && !directionsResponse && !directionsError) {
-      calculateRoute();
-    }
-  }, [showDirections, from, to, isLoaded, directionsResponse, directionsError, calculateRoute]);
+    if (!isLoaded || !showDirections) return;
+    calculateRoute();
+  }, [isLoaded, showDirections, calculateRoute]);
 
   // Clear directions when locations change
   useEffect(() => {
@@ -159,6 +181,16 @@ const MapComponent = ({
       setRouteInfo(null);
     }
   }, [showDirections]);
+
+  // Keep route visible when explicit coordinates are available.
+  useEffect(() => {
+    if (!map || !pickupLocation || !destinationLocation || !window.google?.maps) return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    bounds.extend(pickupLocation);
+    bounds.extend(destinationLocation);
+    map.fitBounds(bounds, 60);
+  }, [map, pickupLocation, destinationLocation]);
 
   // Determine map center
   const getMapCenter = () => {
@@ -291,7 +323,20 @@ const MapComponent = ({
         )}
 
         {/* Directions Renderer */}
-        {directionsResponse && <DirectionsRenderer directions={directionsResponse} />}
+        {directionsResponse && (
+          <DirectionsRenderer
+            directions={directionsResponse}
+            options={{
+              suppressMarkers: false,
+              preserveViewport: false,
+              polylineOptions: {
+                strokeColor: "#2563eb",
+                strokeOpacity: 0.9,
+                strokeWeight: 6,
+              },
+            }}
+          />
+        )}
 
         {/* Error Display */}
         {directionsError && (

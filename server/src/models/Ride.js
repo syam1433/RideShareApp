@@ -52,6 +52,11 @@ const rideSchema = new mongoose.Schema(
       type: Number,
       required: true
     },
+    seatCapacity: {
+      type: Number,
+      min: 1,
+      default: 1
+    },
     vehicleType: String,
     dlNumber: {
       type: String,

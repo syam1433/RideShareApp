@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
 import FindRide from "./pages/FindRide";
+import NearbyRides from "./pages/NearbyRides";
 import PostRide from "./pages/PostRide";
 import RideDetails from "./pages/RideDetails";
 import Profile from "./pages/Profile";
@@ -52,6 +53,11 @@ export const router = createBrowserRouter([
       {
         path: "find-ride",
         element: <FindRide />,
+      },
+
+      {
+        path: "nearby-rides",
+        element: <NearbyRides />,
       },
 
       // Ride Details (both roles)

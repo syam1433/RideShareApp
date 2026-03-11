@@ -148,13 +148,28 @@ exports.submitCancellation = async (req, res) => {
       let modelResult = {
         status: "SKIPPED",
         detected: 0,
+        seatsOffered: Math.max(Number(ride.seatCapacity || 0), Number(ride.seatsAvailable || 0), 1),
         message: "Overloading check skipped (no photo or not selected)"
       };
 
       // 3. Overloading detection
       if (reason === "Overloading" && req.file) {
         const imagePath = req.file.path;
-        const seatsOffered = ride.seatsAvailable || 4;
+        const activeBookings = await Booking.find({
+          ride: rideId,
+          status: { $in: ["pending", "confirmed", "completed"] }
+        }).select("seatsBooked");
+
+        const bookedSeats = activeBookings.reduce(
+          (sum, bookingDoc) => sum + Number(bookingDoc.seatsBooked || 1),
+          0
+        );
+
+        const seatsOffered = Math.max(
+          Number(ride.seatCapacity || 0),
+          Number(ride.seatsAvailable || 0) + bookedSeats,
+          1
+        );
 
         const pythonScriptPath = path.join(__dirname, "../../python/Rideshare_Overloading_Detection/main.py");
 
@@ -220,7 +235,9 @@ exports.submitCancellation = async (req, res) => {
 
         try {
           const statusMatch = fullOutput.match(/Final Status:\s*(\w+)/i);
-          const detectedMatch = fullOutput.match(/Total Persons Detected:\s*(\d+)/i);
+          const detectedMatch =
+            fullOutput.match(/Total Persons Detected:\s*(\d+)/i) ||
+            fullOutput.match(/Persons Detected:\s*(\d+)/i);
 
           status = statusMatch ? statusMatch[1].trim().toUpperCase() : "ERROR";
           detected = detectedMatch ? parseInt(detectedMatch[1], 10) : 0;
@@ -230,13 +247,23 @@ exports.submitCancellation = async (req, res) => {
           detected = 0;
         }
 
+        const reportedActualCount = Number(actualMembersCount || 0);
+        const reportedOverloadedCount = Number(overloadedCount || 0);
+        const reportedOverloaded = reportedActualCount > seatsOffered || reportedOverloadedCount > 0;
+
+        // If model is uncertain but user-reported values clearly indicate overloading, escalate to borderline review.
+        if ((status === "NORMAL" || status === "ERROR") && reportedOverloaded) {
+          status = "BORDERLINE";
+        }
+
         modelResult = {
           status,
           detected,
+          seatsOffered,
           message: status === "OVERLOADED"
             ? `OVERLOADED! ${detected} persons detected (offered ${seatsOffered} seats)`
             : status === "BORDERLINE"
-            ? `BORDERLINE! ${detected} persons detected - flagged for manual review`
+            ? `BORDERLINE! ${detected} persons detected (${reportedActualCount || "N/A"} reported) - flagged for manual review`
             : status === "ERROR"
             ? "Model analysis failed - proceeding with manual review"
             : `No overload (${detected} persons detected)`

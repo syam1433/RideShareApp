@@ -49,7 +49,11 @@ const CancelBooking = () => {
     if (rideId) fetchRide();
   }, [rideId, location.state]);
 
-  const seatsOffered = ride?.seatsAvailable || 4; // fallback to 4 if not loaded
+  const seatsOffered = Math.max(
+    Number(ride?.seatCapacity || 0),
+    Number(ride?.seatsAvailable || 0),
+    1
+  );
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -127,7 +131,8 @@ const CancelBooking = () => {
     setModelResult(res.data.modelResult || {
       status: res.data.overloaded ? "OVERLOADED" : "NORMAL",
       message: res.data.message,
-      detected: res.data.detected || 0
+      detected: res.data.detected || 0,
+      seatsOffered,
     });
 
     toast.success(res.data.message || "Cancellation processed");
@@ -142,13 +147,15 @@ const CancelBooking = () => {
   }
 };
 
+  const shownSeatsOffered = Number(modelResult?.seatsOffered || seatsOffered || 1);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-lg p-8 max-w-lg w-full">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Cancel Booking</h1>
         <p className="text-gray-600 mb-6">
           Please provide a reason for cancellation. For <strong>Overloading</strong> claims, upload a photo and specify details.
-          Seats offered: <strong>{seatsOffered}</strong>
+          Seats offered: <strong>{shownSeatsOffered}</strong>
         </p>
 
         {formError && (
@@ -169,7 +176,7 @@ const CancelBooking = () => {
             <p className="mb-2">{modelResult.message}</p>
             {modelResult.detected > 0 && (
               <p className="font-medium">
-                Detected: <strong>{modelResult.detected}</strong> people (vs {seatsOffered} seats offered)
+                Detected: <strong>{modelResult.detected}</strong> people (vs {shownSeatsOffered} seats offered)
               </p>
             )}
           </div>

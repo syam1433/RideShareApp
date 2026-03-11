@@ -101,6 +101,24 @@ const ActiveRide = () => {
   const isOngoing = ride.status === "active" || ride.status === "upcoming";
   const isCompleted = ride.status === "completed";
 
+  const pickupLocation =
+    Array.isArray(ride.pickupLocation?.coordinates) &&
+    ride.pickupLocation.coordinates.length === 2
+      ? {
+          lat: Number(ride.pickupLocation.coordinates[1]),
+          lng: Number(ride.pickupLocation.coordinates[0]),
+        }
+      : null;
+
+  const destinationLocation =
+    Array.isArray(ride.destinationLocation?.coordinates) &&
+    ride.destinationLocation.coordinates.length === 2
+      ? {
+          lat: Number(ride.destinationLocation.coordinates[1]),
+          lng: Number(ride.destinationLocation.coordinates[0]),
+        }
+      : null;
+
   // Check if user has already rated
   useEffect(() => {
     if (isCompleted && !isDriver) {
@@ -144,7 +162,14 @@ const ActiveRide = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Map */}
-            <MapComponent from={ride.from} to={ride.to} className="h-96" showDirections={true} />
+            <MapComponent
+              from={ride.from}
+              to={ride.to}
+              pickupLocation={pickupLocation}
+              destinationLocation={destinationLocation}
+              className="h-96"
+              showDirections={true}
+            />
 
             {/* Trip Progress */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
