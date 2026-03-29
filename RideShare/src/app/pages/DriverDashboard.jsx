@@ -28,6 +28,8 @@ const DriverDashboard = () => {
   useEffect(() => {
     if (authLoading) return;
 
+    const driverId = user?.id || user?._id;
+
     const fetchDriverData = async () => {
       if (!user || user.role !== "driver") {
         setError("Please login as a driver");
@@ -40,8 +42,10 @@ const DriverDashboard = () => {
         setRides(ridesRes.data || []);
 
         try {
-          const safetyRes = await API.get(`/safety/${user._id}`);
-          setSafetyRecord(safetyRes.data);
+          if (driverId) {
+            const safetyRes = await API.get(`/safety/${driverId}`);
+            setSafetyRecord(safetyRes.data);
+          }
         } catch {}
       } catch (err) {
         setError("Failed to load dashboard data");

@@ -16,13 +16,15 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        console.log("Decoded token:", decoded);
+
+        const normalizedId = decoded.id || decoded.userId;
 
         // Comment out or remove /users/me fetch for now
         // const res = await API.get("/users/me");
 
         setUser({
-          id: decoded.id || decoded.userId,
+          id: normalizedId,
+          _id: normalizedId,
           name: decoded.name || "User",
           email: decoded.email || "",
           role: role || decoded.role || "user",
@@ -45,7 +47,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("role", role);
     API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    setUser({ ...userData, role, token });
+
+    const normalizedId = userData.id || userData._id;
+    setUser({
+      ...userData,
+      id: normalizedId,
+      _id: normalizedId,
+      role,
+      token,
+    });
   };
 
   const logout = () => {

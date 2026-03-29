@@ -118,13 +118,6 @@ const CancelBooking = () => {
       }
       if (photo instanceof File) formData.append("proofImage", photo);
 
-      // Debug send — list entries safely
-      console.log("Sending FormData:");
-      for (const pair of (formData as any).entries()) {
-        const [key, value] = pair;
-        console.log(key, value instanceof File ? `${value.name} (file, ${value.size} bytes)` : value);
-      }
-
       // THE ONLY POST CALL – NO HEADERS. Let browser set Content-Type with boundary.
       const res = await API.post(`/bookings/cancel/${rideId}`, formData);
 

@@ -56,7 +56,6 @@ const RideDetails = () => {
 
       try {
         const res = await API.get(`/rides/${id}`);
-        console.log("Ride data:", res.data);
         setRide(res.data);
         // if backend included OTP, mark as sent for UI
         if (res.data.otp) setOtpSent(true);
@@ -86,7 +85,6 @@ const RideDetails = () => {
       const handleOtpSent = ({ rideId, otp }) => {
         // Accept both { rideId, otp } and payloads without rideId (driver may emit directly)
         if (!rideId && otp) {
-          console.log("OTP received in RideDetails (no rideId):", otp);
           setRide((prev) => prev ? { ...prev, otp } : prev);
           setOtpSent(true);
           toast.success("OTP received!", { icon: "🔐" });
@@ -94,7 +92,6 @@ const RideDetails = () => {
         }
 
         if (rideId === id) {
-          console.log("OTP received in RideDetails:", otp);
           setRide((prev) => prev ? { ...prev, otp } : null);
           setOtpSent(true);
           toast.success("OTP received!", { icon: "🔐" });
@@ -104,7 +101,6 @@ const RideDetails = () => {
       // Listen for ride status updates
       const handleRideStatusUpdated = ({ rideId, status, otp }) => {
         if (rideId === id) {
-          console.log("Ride status updated in RideDetails:", { status, otp });
           setRide((prev) =>
             prev ? { ...prev, status, otp: otp || prev.otp } : null
           );
@@ -267,16 +263,6 @@ const RideDetails = () => {
 
   // FIXED: Safe string comparison for driver check
   const isDriver = user?.id && ride?.driver?._id && String(ride.driver._id) === String(user.id);
-
-  // Debug log (remove after testing)
-  console.log("RideDetails Debug:", {
-    userId: user?.id,
-    driverId: ride.driver?._id?.toString(),
-    isDriver,
-    rideStatus: ride.status,
-    seatsAvailable: ride.seatsAvailable,
-    isBookedByMe
-  });
 
   const canBook = ride.status === "upcoming" && ride.seatsAvailable > 0;
   const isRideActive = ride.status === "active";

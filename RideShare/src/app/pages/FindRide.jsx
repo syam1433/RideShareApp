@@ -49,8 +49,6 @@ const FindRide = () => {
 
       const res = await API.get(`/rides?${params.toString()}`);
 
-      console.log("Raw response from /rides:", res.data); // ← debug
-
       // Normalize response – make sure we always get an array
       let rideList = [];
 
