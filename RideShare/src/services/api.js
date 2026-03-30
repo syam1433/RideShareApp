@@ -1,8 +1,10 @@
 // src/services/api.ts
 import axios from "axios";
 
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
+
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // change if your backend port is different
+  baseURL: `${BACKEND_URL}/api`,
   timeout: 60000, // 60s timeout for model processing
 });
 

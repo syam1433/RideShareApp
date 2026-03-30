@@ -184,7 +184,8 @@ exports.submitCancellation = async (req, res) => {
 
         console.log("[MODEL] Running Python:", pythonScriptPath, imagePath, seatsOffered);
 
-        const pythonProcess = spawn("python", [pythonScriptPath, imagePath, seatsOffered.toString()]);
+        const pythonBin = process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3");
+        const pythonProcess = spawn(pythonBin, [pythonScriptPath, imagePath, seatsOffered.toString()]);
 
         let fullOutput = "";
         let fullError = "";
