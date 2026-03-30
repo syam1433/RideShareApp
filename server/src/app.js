@@ -6,10 +6,23 @@ const path = require("path");
 
 const app = express();
 
+const allowedOrigins = [
+  ...(process.env.CLIENT_URLS || "").split(",").map((origin) => origin.trim()).filter(Boolean),
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  // add this if you use urlencoded anywhere
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow non-browser requests and same-origin requests with no Origin header.
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+}));
 app.use(cookieParser());
 
 // Static files first (good)
