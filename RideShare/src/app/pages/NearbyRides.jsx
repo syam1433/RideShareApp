@@ -46,7 +46,7 @@ const NearbyRides = () => {
   const [mapRef, setMapRef] = useState(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    id: "nearby-rides-map",
+    id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAP_LIBRARIES,
   });
