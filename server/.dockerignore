@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+uploads/temp
+python/Rideshare_Overloading_Detection/uploads
+python/Rideshare_Overloading_Detection/output
+output

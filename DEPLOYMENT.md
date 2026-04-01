@@ -44,25 +44,31 @@ Notes:
 - Use `PYTHON_BIN=python` locally on Windows if needed.
 - Use `PYTHON_BIN=python3` on Render/Linux.
 
-## 4. Deploy Backend On Render (Node + Python)
+## 4. Deploy Backend On Render (Recommended: Docker)
 
-Create one Render **Web Service** from your repository.
+Your backend runs Node.js and invokes a Python YOLO model. The most reliable Render setup is a single Docker Web Service.
 
-Settings:
-- Root Directory: `server`
-- Runtime: `Node`
-- Build Command:
+This repo now includes:
+- `server/Dockerfile`
+- `server/.dockerignore`
+- `render.yaml`
 
-```bash
-npm install
-pip install -r python/Rideshare_Overloading_Detection/requirements.txt
-```
+### Option A: Blueprint deploy (recommended)
 
-- Start Command:
+1. Push latest code to GitHub.
+2. In Render, click **New +** -> **Blueprint**.
+3. Select this repository.
+4. Render reads `render.yaml` and creates the backend service.
 
-```bash
-node server.js
-```
+### Option B: Manual web service deploy
+
+1. In Render, click **New +** -> **Web Service**.
+2. Select repo and set:
+	- Environment: `Docker`
+	- Root Directory: `server`
+	- Dockerfile Path: `./Dockerfile`
+	- Health Check Path: `/`
+3. Deploy.
 
 Environment Variables in Render:
 - `PORT=10000` (Render default web port)
@@ -73,6 +79,7 @@ Environment Variables in Render:
 - `CLIENT_URL=https://your-frontend-url.onrender.com`
 - `GOOGLE_MAPS_API_KEY=...`
 - `PYTHON_BIN=python3`
+- `CLIENT_URLS=https://ride-share-app-eta.vercel.app,http://localhost:5173`
 
 After deploy, note backend URL (example):
 - `https://rideshare-backend.onrender.com`
