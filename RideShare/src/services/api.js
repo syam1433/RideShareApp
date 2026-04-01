@@ -1,10 +1,13 @@
 // src/services/api.ts
 import axios from "axios";
 
-const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
+const backendUrlFromEnv = (import.meta.env.VITE_BACKEND_URL || "").trim();
+const defaultBackendUrl = import.meta.env.DEV ? "http://localhost:5000" : "";
+const BACKEND_URL = (backendUrlFromEnv || defaultBackendUrl).replace(/\/$/, "");
+const API_BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api` : "/api";
 
 const API = axios.create({
-  baseURL: `${BACKEND_URL}/api`,
+  baseURL: API_BASE_URL,
   timeout: 60000, // 60s timeout for model processing
 });
 

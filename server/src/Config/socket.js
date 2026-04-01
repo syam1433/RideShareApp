@@ -3,9 +3,34 @@ const bookingController = require("../controllers/bookingController");
 
 let io;
 
+const normalizeOrigin = (origin) => origin.replace(/\/$/, "");
+
+const getAllowedOrigins = () => {
+  return [
+    ...(process.env.CLIENT_URLS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+    process.env.CLIENT_URL,
+  ]
+    .filter(Boolean)
+    .map(normalizeOrigin);
+};
+
 const initSocket = (server) => {
   io = new Server(server, {
-    cors: { origin: process.env.CLIENT_URL },
+    cors: {
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = getAllowedOrigins();
+        const normalizedOrigin = normalizeOrigin(origin);
+
+        if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
+        return callback(new Error(`Socket CORS blocked for origin: ${origin}`));
+      },
+      credentials: true,
+    },
   });
 
   // Set socket instance in booking controller

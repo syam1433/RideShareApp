@@ -6,10 +6,17 @@ const path = require("path");
 
 const app = express();
 
+const normalizeOrigin = (origin) => origin.replace(/\/$/, "");
+
 const allowedOrigins = [
-  ...(process.env.CLIENT_URLS || "").split(",").map((origin) => origin.trim()).filter(Boolean),
+  ...(process.env.CLIENT_URLS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   process.env.CLIENT_URL,
-].filter(Boolean);
+]
+  .filter(Boolean)
+  .map(normalizeOrigin);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));  // add this if you use urlencoded anywhere
@@ -18,7 +25,9 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow non-browser requests and same-origin requests with no Origin header.
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    const normalizedOrigin = normalizeOrigin(origin);
+    if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
