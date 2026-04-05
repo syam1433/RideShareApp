@@ -1,6 +1,7 @@
 const Booking = require("../models/Booking");
 const Ride = require("../models/Ride");
 const User = require("../models/User");
+const SafetyRecord = require("../models/SafetyRecord");
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs/promises");
@@ -22,12 +23,60 @@ if (!fsSync.existsSync(uploadDir)) {
 }
 
 const upload = multer({ dest: uploadDir });
+const OVERLOAD_BLACKLIST_THRESHOLD = 2;
+
+const blacklistDriverIfNeeded = async (driverId, rideId, reason) => {
+  const resolvedDriverId = driverId?._id || driverId;
+  if (!resolvedDriverId) return null;
+
+  const safetyRecord = await SafetyRecord.findOneAndUpdate(
+    { driver: resolvedDriverId },
+    {
+      $inc: { overloadViolations: 1 },
+      $set: {
+        lastChecked: new Date(),
+        aiStatus: "failed",
+      },
+    },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+
+  const driver = await User.findById(resolvedDriverId);
+  if (!driver) return { safetyRecord, blacklisted: false };
+
+  const overloadViolations = Number(safetyRecord?.overloadViolations || driver.overloadViolations || 0);
+  const blacklisted = overloadViolations >= OVERLOAD_BLACKLIST_THRESHOLD;
+
+  if (blacklisted) {
+    driver.isBlacklisted = true;
+    driver.canCreateRide = false;
+    driver.blacklistedAt = driver.blacklistedAt || new Date();
+    driver.blacklistReason =
+      reason || "Repeated overloading cancellations detected";
+  }
+
+  driver.overloadViolations = overloadViolations;
+  await driver.save();
+
+  if (io) {
+    io.to(`user_${resolvedDriverId}`).emit("driver_blacklist_updated", {
+      rideId,
+      overloadViolations,
+      blacklisted,
+      blacklistReason: driver.blacklistReason,
+    });
+  }
+
+  return { safetyRecord, blacklisted, overloadViolations, driver };
+};
 
 /**
  * Handle Normal Cancellation Logic
  */
 const handleNormalCancellation = async (ride, booking, passengerId, reason, customReason) => {
   try {
+    const resolvedDriverId = ride.driver?._id || ride.driver;
+
     // Update booking status
     booking.status = "cancelled";
     booking.cancelReason = reason || customReason;
@@ -40,8 +89,8 @@ const handleNormalCancellation = async (ride, booking, passengerId, reason, cust
     await ride.save();
 
     // Notify driver via socket
-    if (io && ride.driver) {
-      io.to(`user_${ride.driver}`).emit('booking_cancelled', {
+    if (io && resolvedDriverId) {
+      io.to(`user_${resolvedDriverId}`).emit('booking_cancelled', {
         rideId: ride._id,
         passengerId,
         reason: reason || customReason,
@@ -144,6 +193,8 @@ exports.submitCancellation = async (req, res) => {
         console.log("[ERROR] Booking not found for passenger:", passengerId);
         return res.status(404).json({ success: false, message: "No active booking found" });
       }
+
+      const isOverloadReason = String(reason || "").toLowerCase() === "overloading";
 
       let modelResult = {
         status: "SKIPPED",
@@ -279,11 +330,14 @@ exports.submitCancellation = async (req, res) => {
           // Safe driver penalization
           if (driver) {
             driver.rating = Math.max(1.0, Number(driver.rating || 5.0) - 0.5);
-            driver.totalReviews = Number(driver.totalReviews || 0) + 1;
             await driver.save();
             console.log(`[DRIVER] Rating reduced to ${driver.rating} for ${driver._id}`);
           } else {
             console.warn("[WARN] No driver to penalize for ride", rideId);
+          }
+
+          if (isOverloadReason) {
+            await blacklistDriverIfNeeded(ride.driver, rideId, modelResult.message);
           }
 
           ride.status = "cancelled";
@@ -306,6 +360,10 @@ exports.submitCancellation = async (req, res) => {
           // Still allow cancellation but with a warning for manual review
           await handleNormalCancellation(ride, booking, passengerId, reason, "Borderline overloading detected - " + (customReason || "Manual review required"));
 
+          if (isOverloadReason) {
+            await blacklistDriverIfNeeded(ride.driver, rideId, "Borderline overloading detected");
+          }
+
           return res.json({
             success: true,
             overloaded: false,
@@ -318,6 +376,10 @@ exports.submitCancellation = async (req, res) => {
 
           // Still allow cancellation but with a warning
           await handleNormalCancellation(ride, booking, passengerId, reason, "Model analysis failed - " + (customReason || "Overloading reported"));
+
+          if (isOverloadReason) {
+            await blacklistDriverIfNeeded(ride.driver, rideId, "Overloading cancellation reported");
+          }
 
           return res.json({
             success: true,
@@ -332,6 +394,10 @@ exports.submitCancellation = async (req, res) => {
       // Normal cancellation
       console.log("[ACTION] Normal cancellation");
       await handleNormalCancellation(ride, booking, passengerId, reason, customReason);
+
+      if (isOverloadReason) {
+        await blacklistDriverIfNeeded(ride.driver, rideId, "Overloading cancellation reported");
+      }
 
       return res.json({
         success: true,

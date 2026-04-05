@@ -74,14 +74,14 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen bg-white border-r border-gray-200 transition-transform duration-300 z-40 ${
+        className={`fixed lg:sticky top-0 left-0 h-screen bg-white/95 backdrop-blur-xl border-r border-gray-200 transition-transform duration-300 ease-out z-40 shadow-[0_20px_50px_rgba(15,23,42,0.08)] ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         } w-64 flex flex-col`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 animate-fade-up">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center animate-soft-pulse">
               <Car className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -92,12 +92,12 @@ const Sidebar = () => {
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 animate-fade-up" style={{ animationDelay: "80ms" }}>
           <div className="flex items-center gap-3">
             <img
               src={user?.avatar}
               alt={user?.name}
-              className="w-12 h-12 rounded-full"
+              className="w-12 h-12 rounded-full ring-2 ring-green-100 transition-transform duration-300 hover:scale-105"
             />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{user?.name}</p>
@@ -109,18 +109,18 @@ const Sidebar = () => {
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-2">
-            {menuItems.map((item) => {
+            {menuItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
-                <li key={item.name}>
+                <li key={item.name} className="animate-fade-up" style={{ animationDelay: `${index * 55}ms` }}>
                   <Link
                     to={item.path}
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
-                        ? "bg-green-50 text-green-600"
-                        : "text-gray-700 hover:bg-gray-50"
+                        ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 shadow-sm"
+                        : "text-gray-700 hover:bg-gray-50 hover:translate-x-1"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -136,7 +136,7 @@ const Sidebar = () => {
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 w-full transition-colors"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 w-full transition-all duration-300 hover:-translate-y-0.5"
           >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>

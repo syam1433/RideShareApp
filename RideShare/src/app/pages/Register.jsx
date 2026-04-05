@@ -113,12 +113,12 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-white flex items-center justify-center p-4 py-12">
+    <div className="page-shell min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-white flex items-center justify-center p-4 py-12">
       <div className="max-w-2xl w-full">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="page-content text-center mb-8 animate-page-in">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center animate-soft-pulse">
               <Car className="w-7 h-7 text-white" />
             </div>
             <div className="text-left">
@@ -134,7 +134,7 @@ const Register = () => {
         </div>
 
         {/* Register Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="page-content bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-gray-100 animate-fade-scale hover-lift">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
               <AlertCircle className="w-5 h-5" />
@@ -145,15 +145,15 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Role Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-3 animate-fade-up">
                 I want to
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <label
                   className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     formData.role === "user"
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "border-green-500 bg-green-50 shadow-sm scale-[1.01]"
+                      : "border-gray-200 hover:border-gray-300 hover:-translate-y-0.5"
                   }`}
                 >
                   <input
@@ -169,8 +169,8 @@ const Register = () => {
                 <label
                   className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     formData.role === "driver"
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "border-green-500 bg-green-50 shadow-sm scale-[1.01]"
+                      : "border-gray-200 hover:border-gray-300 hover:-translate-y-0.5"
                   }`}
                 >
                   <input
@@ -353,11 +353,11 @@ const Register = () => {
               />
               <label className="ml-2 text-sm text-gray-600">
                 I agree to the{" "}
-                <Link to="#" className="text-green-600 hover:text-green-700">
+                <Link to="#" className="text-green-600 hover:text-green-700 transition-colors">
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link to="#" className="text-green-600 hover:text-green-700">
+                <Link to="/privacy-policy" className="text-green-600 hover:text-green-700 transition-colors">
                   Privacy Policy
                 </Link>
               </label>
@@ -397,7 +397,7 @@ const Register = () => {
           {/* Login Link */}
           <Link
             to="/login"
-            className="block w-full text-center bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+            className="block w-full text-center bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300"
           >
             Sign In
           </Link>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../../services/api";
+import { useAuth } from "../context/AuthContext";
 import {
   MapPin,
   Calendar,
@@ -58,6 +59,7 @@ const geocodeAddress = async (address) => {
 
 const PostRide = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     from: "",
@@ -165,16 +167,24 @@ const PostRide = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="page-shell min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
+        <div className="page-content mb-8 animate-page-in">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Post a Ride</h1>
           <p className="text-gray-600">
             Share your journey — ride expires automatically after 24 hours
           </p>
+          {user?.isBlacklisted && (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+              <p className="font-semibold">Ride creation blocked</p>
+              <p className="text-sm mt-1">
+                {user.blacklistReason || "Your account is blacklisted from creating rides."}
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+        <div className={`page-content bg-white rounded-xl shadow-sm border border-gray-100 p-8 ${user?.isBlacklisted ? "opacity-60 pointer-events-none" : ""}`}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Route Details */}
             <div>

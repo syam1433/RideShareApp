@@ -13,6 +13,7 @@ import RideDetails from "./pages/RideDetails";
 import Profile from "./pages/Profile";
 import ActiveRide from "./pages/ActiveRide";
 import CancelBooking from "./pages/CancelBooking"; // ← New page
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     element: <Register />,
+  },
+  {
+    path: "/privacy-policy",
+    element: <PrivacyPolicy />,
   },
 
   // Protected routes with Dashboard Layout

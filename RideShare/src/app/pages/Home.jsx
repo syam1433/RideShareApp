@@ -103,7 +103,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="page-shell min-h-screen bg-white pt-16">
       <Navbar />
 
       {/* Hero Section */}
@@ -111,8 +111,8 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full mb-6">
+            <div className="page-content animate-page-in">
+              <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full mb-6 animate-soft-pulse">
                 <Shield className="w-4 h-4" />
                 <span className="text-sm font-medium">
                   AI-Powered Safety First
@@ -131,14 +131,14 @@ const Home = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/find-ride"
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-lg hover:shadow-xl transition-all font-semibold text-center flex items-center justify-center gap-2 group"
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-lg hover:shadow-xl transition-all duration-300 font-semibold text-center flex items-center justify-center gap-2 group hover:-translate-y-0.5"
                 >
                   Find a Ride
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-white border-2 border-green-500 text-green-600 px-8 py-4 rounded-lg hover:bg-green-50 transition-all font-semibold text-center"
+                  className="bg-white border-2 border-green-500 text-green-600 px-8 py-4 rounded-lg hover:bg-green-50 transition-all duration-300 font-semibold text-center hover:-translate-y-0.5"
                 >
                   Offer a Ride
                 </Link>
@@ -162,9 +162,9 @@ const Home = () => {
             </div>
 
             {/* Right Visual */}
-            <div className="relative">
-              <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-3xl p-12 shadow-2xl">
-                <div className="bg-white rounded-2xl p-8 shadow-xl">
+            <div className="relative page-content animate-fade-scale" style={{ animationDelay: "120ms" }}>
+              <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-3xl p-12 shadow-2xl animate-gradient-shift">
+                <div className="bg-white rounded-2xl p-8 shadow-xl hover-lift transition-all duration-300">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                       <Car className="w-6 h-6 text-green-600" />
@@ -194,7 +194,7 @@ const Home = () => {
                       <CheckCircle className="w-5 h-5 text-green-600" />
                     </div>
                   </div>
-                  <button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-lg mt-6 font-semibold">
+                  <button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-lg mt-6 font-semibold animate-soft-pulse">
                     Book Now - ₹80
                   </button>
                 </div>
@@ -207,7 +207,7 @@ const Home = () => {
       {/* Features Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="page-content text-center mb-16 animate-page-in">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Why Choose RideShare Connect?
             </h2>
@@ -222,7 +222,7 @@ const Home = () => {
               return (
                 <div
                   key={index}
-                  className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 group"
+                  className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group hover:-translate-y-1"
                 >
                   <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Icon className="w-7 h-7 text-white" />
@@ -243,7 +243,7 @@ const Home = () => {
       {/* How It Works */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="page-content text-center mb-16 animate-page-in">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               How It Works
             </h2>
@@ -255,7 +255,7 @@ const Home = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {howItWorks.map((item, index) => (
               <div key={index} className="relative">
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-2xl text-center">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-2xl text-center hover-lift transition-all duration-300">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
                     {item.step}
                   </div>
@@ -278,7 +278,7 @@ const Home = () => {
       {/* Team Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="page-content text-center mb-16 animate-page-in">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Meet Our Team
             </h2>
@@ -291,7 +291,7 @@ const Home = () => {
             {mockTeamMembers.map((member, index) => (
               <div
                 key={index}
-                className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all text-center border border-gray-100"
+                className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 text-center border border-gray-100 hover:-translate-y-1"
               >
                 <img
                   src={member.avatar}
@@ -311,7 +311,7 @@ const Home = () => {
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-br from-green-500 to-emerald-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="page-content max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-page-in">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Start Your Safe Journey?
           </h2>

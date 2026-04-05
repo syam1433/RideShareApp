@@ -15,8 +15,10 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import API from "../../services/api";
 import { format, isValid } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 const FindRide = () => {
+  const navigate = useNavigate();
   const [searchForm, setSearchForm] = useState({
     from: "",
     to: "",
@@ -100,7 +102,7 @@ const FindRide = () => {
         seatsBooked: Number(searchForm.passengers),
       });
       toast.success("Ride booked! Check your dashboard.");
-      fetchRides(); // refresh list after booking
+      navigate(`/ride/${rideId}`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Booking failed");
     }
@@ -114,16 +116,16 @@ const FindRide = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="page-shell min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="page-content mb-8 animate-page-in">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Find a Ride</h1>
           <p className="text-gray-600">Search for available rides in your area</p>
         </div>
 
         {/* Search Form */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="page-content bg-white/90 backdrop-blur-xl rounded-xl shadow-sm border border-gray-100 p-6 mb-8 animate-fade-scale hover-lift">
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); fetchRides(); }}>
             <div className="grid md:grid-cols-4 gap-4">
               <div>
@@ -137,7 +139,7 @@ const FindRide = () => {
                     value={searchForm.from}
                     onChange={(e) => setSearchForm({ ...searchForm, from: e.target.value })}
                     placeholder="Enter starting location"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 focus:-translate-y-0.5"
                   />
                 </div>
               </div>
@@ -153,7 +155,7 @@ const FindRide = () => {
                     value={searchForm.to}
                     onChange={(e) => setSearchForm({ ...searchForm, to: e.target.value })}
                     placeholder="Enter destination"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 focus:-translate-y-0.5"
                   />
                 </div>
               </div>
@@ -168,7 +170,7 @@ const FindRide = () => {
                     type="date"
                     value={searchForm.date}
                     onChange={(e) => setSearchForm({ ...searchForm, date: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 focus:-translate-y-0.5"
                   />
                 </div>
               </div>
@@ -182,7 +184,7 @@ const FindRide = () => {
                   <select
                     value={searchForm.passengers}
                     onChange={(e) => setSearchForm({ ...searchForm, passengers: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 focus:-translate-y-0.5"
                   >
                     {[1, 2, 3, 4].map((num) => (
                       <option key={num} value={num}>
@@ -196,7 +198,7 @@ const FindRide = () => {
 
             <button
               type="submit"
-              className="w-full md:w-auto bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              className="w-full md:w-auto bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 hover:-translate-y-0.5"
             >
               <Search className="w-5 h-5" />
               Search Rides
@@ -214,7 +216,7 @@ const FindRide = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setActiveFilters({ ...activeFilters, vehicleType: "all" })}
-              className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 whitespace-nowrap hover:-translate-y-0.5 ${
                 activeFilters.vehicleType === "all"
                   ? "bg-green-500 text-white"
                   : "bg-white text-gray-700 border border-gray-200 hover:border-green-300"
@@ -276,7 +278,7 @@ const FindRide = () => {
             {rides.map((ride) => (
               <div
                 key={ride._id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
+                className="bg-white/90 rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Driver Info */}
@@ -361,13 +363,13 @@ const FindRide = () => {
                         <>
                           <button
                             onClick={() => handleBookRide(ride._id)}
-                            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+                            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
                           >
                             Book Now
                           </button>
                           <Link
                             to={`/ride/${ride._id}`}
-                            className="block w-full text-center bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 transition-all text-sm"
+                            className="block w-full text-center bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300 text-sm"
                           >
                             View Details
                           </Link>

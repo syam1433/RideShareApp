@@ -53,12 +53,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-white flex items-center justify-center p-4">
+    <div className="page-shell min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-white flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="page-content text-center mb-8 animate-page-in">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center animate-soft-pulse">
               <Car className="w-7 h-7 text-white" />
             </div>
             <div className="text-left">
@@ -72,7 +72,7 @@ const Login = () => {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="page-content bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-gray-100 animate-fade-scale hover-lift">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
               <AlertCircle className="w-5 h-5" />
@@ -81,7 +81,7 @@ const Login = () => {
           )}
 
           {/* Demo Info */}
-          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6 animate-fade-up">
             <p className="text-sm font-medium mb-2">Demo Credentials:</p>
             <p className="text-xs">
               User: user@example.com | Driver: driver@example.com
@@ -147,7 +147,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 ${
                 loading
                   ? "bg-green-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-green-500 to-emerald-600 hover:shadow-lg"
@@ -179,7 +179,7 @@ const Login = () => {
           {/* Register Link */}
           <Link
             to="/register"
-            className="block w-full text-center bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+            className="block w-full text-center bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300"
           >
             Create Account
           </Link>

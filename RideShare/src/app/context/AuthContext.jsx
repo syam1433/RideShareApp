@@ -19,15 +19,31 @@ export const AuthProvider = ({ children }) => {
 
         const normalizedId = decoded.id || decoded.userId;
 
-        // Comment out or remove /users/me fetch for now
-        // const res = await API.get("/users/me");
+        API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        let profile = {};
+        try {
+          const res = await API.get("/users/me");
+          profile = res.data || {};
+        } catch (profileErr) {
+          console.warn("Failed to load profile:", profileErr.message);
+        }
 
         setUser({
-          id: normalizedId,
-          _id: normalizedId,
-          name: decoded.name || "User",
-          email: decoded.email || "",
-          role: role || decoded.role || "user",
+          id: profile._id || normalizedId,
+          _id: profile._id || normalizedId,
+          name: profile.name || decoded.name || "User",
+          email: profile.email || decoded.email || "",
+          phone: profile.phone || decoded.phone || "",
+          avatar: profile.avatar || "",
+          role: profile.role || role || decoded.role || "user",
+          rating: profile.rating,
+          totalReviews: profile.totalReviews,
+          overloadViolations: profile.overloadViolations,
+          canCreateRide: profile.canCreateRide,
+          isBlacklisted: profile.isBlacklisted,
+          blacklistReason: profile.blacklistReason,
+          blacklistedAt: profile.blacklistedAt,
           token,
         });
       } catch (err) {

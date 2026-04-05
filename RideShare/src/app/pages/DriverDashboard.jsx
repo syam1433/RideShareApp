@@ -60,10 +60,19 @@ const DriverDashboard = () => {
   // Categorize rides
   const upcomingRides = rides.filter(r => ["upcoming", "pending", "active"].includes(r.status));
   const completedRides = rides.filter(r => r.status === "completed");
+  const latestRideWithVehicleData = rides.find(
+    (ride) => ride.vehicleType || ride.vehicleModel || ride.vehicleNumber
+  );
+
+  const vehicleInfo = {
+    vehicleType: user?.vehicleType || latestRideWithVehicleData?.vehicleType || "Not available",
+    vehicleModel: user?.vehicleModel || latestRideWithVehicleData?.vehicleModel || "Not available",
+    vehicleNumber: user?.vehicleNumber || latestRideWithVehicleData?.vehicleNumber || "Not available",
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent"></div>
       </div>
     );
@@ -71,7 +80,7 @@ const DriverDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center p-6 bg-white rounded-xl shadow-sm max-w-md">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
@@ -88,16 +97,24 @@ const DriverDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="page-shell min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="page-content mb-8 animate-page-in">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome back, {user?.name || "Driver"}! 🚗
           </h1>
           <p className="text-gray-600">
             Your driver dashboard - manage your rides and earnings
           </p>
+          {user?.isBlacklisted && (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 shadow-sm">
+              <p className="font-semibold">Account restricted</p>
+              <p className="text-sm mt-1">
+                {user.blacklistReason || "Your account is blacklisted from creating new rides."}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Stats Grid */}
@@ -140,7 +157,7 @@ const DriverDashboard = () => {
             return (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div
@@ -162,7 +179,7 @@ const DriverDashboard = () => {
         </div>
 
         {/* Safety Compliance Card */}
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 mb-8 text-white animate-fade-scale hover-lift">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-2xl font-bold mb-2">Safety Compliance</h3>
@@ -176,7 +193,7 @@ const DriverDashboard = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-green-100">Helmet Compliance</span>
                 <CheckCircle className="w-5 h-5" />
@@ -186,7 +203,7 @@ const DriverDashboard = () => {
               </p>
             </div>
 
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-green-100">Overload Violations</span>
                 <AlertCircle
@@ -200,7 +217,7 @@ const DriverDashboard = () => {
               </p>
             </div>
 
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-green-100">Last Check</span>
                 <CheckCircle className="w-5 h-5" />
@@ -221,7 +238,7 @@ const DriverDashboard = () => {
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Link
             to="/post-ride"
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all group"
+            className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all group ${user?.isBlacklisted ? "opacity-60 pointer-events-none" : "hover:-translate-y-1"}`}
           >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
@@ -242,8 +259,8 @@ const DriverDashboard = () => {
           </Link>
 
           <Link
-            to="/my-rides"
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all group"
+            to="/driver-dashboard"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all group hover:-translate-y-1"
           >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
@@ -266,7 +283,7 @@ const DriverDashboard = () => {
 
         {/* Upcoming + Active + Completed Rides */}
         {rides.length > 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div className="page-content bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8 animate-fade-scale">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">My Rides</h2>
               <Link
@@ -279,10 +296,7 @@ const DriverDashboard = () => {
 
             <div className="space-y-4">
               {rides.map((ride) => (
-                <div
-                  key={ride._id}
-                  className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors"
-                >
+                <div key={ride._id} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-all duration-300 hover:-translate-y-0.5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -360,7 +374,7 @@ const DriverDashboard = () => {
         )}
 
         {/* Vehicle Info */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="page-content bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-scale">
           <h2 className="text-xl font-bold text-gray-900 mb-6">
             Vehicle Information
           </h2>
@@ -368,19 +382,19 @@ const DriverDashboard = () => {
             <div>
               <p className="text-sm text-gray-600 mb-1">Vehicle Type</p>
               <p className="font-semibold text-gray-900">
-                {user?.vehicleType || "Not specified"}
+                {vehicleInfo.vehicleType}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Vehicle Number</p>
               <p className="font-semibold text-gray-900">
-                {user?.vehicleNumber || "Not registered"}
+                {vehicleInfo.vehicleNumber}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Model</p>
               <p className="font-semibold text-gray-900">
-                {user?.vehicleModel || "Not specified"}
+                {vehicleInfo.vehicleModel}
               </p>
             </div>
           </div>

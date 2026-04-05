@@ -130,6 +130,13 @@ exports.register = [
           email: user.email,
           phone: user.phone,
           role: user.role,
+          rating: user.rating,
+          totalReviews: user.totalReviews,
+          overloadViolations: user.overloadViolations,
+          canCreateRide: user.canCreateRide,
+          isBlacklisted: user.isBlacklisted,
+          blacklistReason: user.blacklistReason,
+          blacklistedAt: user.blacklistedAt,
           ...(role === "driver" && {
             vehicleType: user.vehicleType,
             vehicleNumber: user.vehicleNumber,
@@ -199,6 +206,13 @@ exports.login = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        rating: user.rating,
+        totalReviews: user.totalReviews,
+        overloadViolations: user.overloadViolations,
+        canCreateRide: user.canCreateRide,
+        isBlacklisted: user.isBlacklisted,
+        blacklistReason: user.blacklistReason,
+        blacklistedAt: user.blacklistedAt,
         // add vehicle fields if driver
         ...(user.role === "driver" && {
           vehicleType: user.vehicleType,

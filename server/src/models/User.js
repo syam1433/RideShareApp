@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema({
 
   // Other fields like rating, avatar, etc.
   rating: { type: Number, default: 4.5 },
+  totalReviews: { type: Number, default: 0 },
+  overloadViolations: { type: Number, default: 0 },
+  canCreateRide: { type: Boolean, default: true },
+  isBlacklisted: { type: Boolean, default: false },
+  blacklistReason: { type: String, default: null },
+  blacklistedAt: { type: Date, default: null },
   avatar: String,
   createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });

@@ -86,6 +86,19 @@ exports.getAllRides = async (req, res) => {
 // Create ride (Driver only)
 exports.createRide = async (req, res) => {
   try {
+    const driver = await User.findById(req.user.id).select("isBlacklisted canCreateRide blacklistReason");
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    if (driver.isBlacklisted || driver.canCreateRide === false) {
+      return res.status(403).json({
+        message: driver.blacklistReason
+          ? `Ride creation blocked: ${driver.blacklistReason}`
+          : "Your account is blacklisted from creating rides",
+      });
+    }
+
     const {
       from,
       to,
@@ -417,7 +430,7 @@ exports.getMyRides = async (req, res) => {
 exports.getRideById = async (req, res) => {
   try {
     const ride = await Ride.findById(req.params.id)
-      .populate("driver", "name avatar rating")
+      .populate("driver", "name avatar rating totalReviews isBlacklisted blacklistReason")
       .populate("passengers", "name avatar phone");
 
     if (!ride) return res.status(404).json({ message: "Ride not found" });

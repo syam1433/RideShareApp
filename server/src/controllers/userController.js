@@ -3,7 +3,7 @@ const User = require("../models/User");
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select(
-      "name email phone avatar role vehicleType vehicleNumber vehicleModel rating totalReviews isVerifiedDriver createdAt"
+      "name email phone avatar role vehicleType vehicleNumber vehicleModel rating totalReviews overloadViolations canCreateRide isBlacklisted blacklistReason blacklistedAt isVerifiedDriver createdAt"
     );
 
     if (!user) {

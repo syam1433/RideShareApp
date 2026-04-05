@@ -45,6 +45,10 @@ const RideDetails = () => {
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [userRating, setUserRating] = useState(5);
+  const [userRatingComment, setUserRatingComment] = useState("");
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [hasRatedRide, setHasRatedRide] = useState(false);
 
   useEffect(() => {
     const fetchRide = async () => {
@@ -66,6 +70,9 @@ const RideDetails = () => {
         }
 
         setVerifiedCount(res.data.verifiedPassengers?.length || 0);
+        setHasRatedRide(
+          !!res.data.ratings?.some((r) => String(r.passenger) === String(user?.id))
+        );
       } catch (err) {
         console.error("Failed to load ride:", err);
         setError(err.response?.data?.message || "Ride not found.");
@@ -237,6 +244,35 @@ const RideDetails = () => {
 }
   };
 
+  const handleSubmitRating = async () => {
+    setSubmittingRating(true);
+    try {
+      const res = await API.post("/reviews/rate-ride", {
+        rideId: ride._id,
+        rating: userRating,
+        comment: userRatingComment.trim(),
+      });
+
+      setHasRatedRide(true);
+      setRide((prev) =>
+        prev
+          ? {
+              ...prev,
+              ratings: [
+                ...(prev.ratings || []),
+                { passenger: user?.id, rating: userRating, comment: userRatingComment.trim() },
+              ],
+            }
+          : prev
+      );
+      toast.success(`Thanks! Driver rating updated to ${res.data.avgRating}/5`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to submit rating");
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -267,6 +303,7 @@ const RideDetails = () => {
   const canBook = ride.status === "upcoming" && ride.seatsAvailable > 0;
   const isRideActive = ride.status === "active";
   const isRideCompleted = ride.status === "completed";
+  const canRateRide = isRideCompleted && !isDriver && isBookedByMe && !hasRatedRide;
 
   const pickupLocation =
     Array.isArray(ride.pickupLocation?.coordinates) &&
@@ -295,17 +332,17 @@ const RideDetails = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <div className="page-shell min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
         <Link
           to="/find-ride"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-medium"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-medium transition-all duration-300 hover:translate-x-1 page-content"
         >
           <ArrowLeft className="w-5 h-5" />
           Back to search
         </Link>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="page-content grid lg:grid-cols-3 gap-6 animate-page-in">
           {/* Left Column - Details */}
           <div className="lg:col-span-2 space-y-6">
             <MapComponent
@@ -318,7 +355,7 @@ const RideDetails = () => {
               showUserLocation={false}
             />
 
-            <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="bg-white/90 backdrop-blur-xl rounded-xl shadow-sm border p-6 hover-lift transition-all duration-300">
               <h2 className="text-2xl font-bold mb-6">Trip Details</h2>
 
               <div className="space-y-5">
@@ -372,7 +409,7 @@ const RideDetails = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="bg-white/90 backdrop-blur-xl rounded-xl shadow-sm border p-6 hover-lift transition-all duration-300">
               <h2 className="text-xl font-bold mb-6">Driver & Ride Info</h2>
 
               <div className="flex flex-col sm:flex-row items-start gap-6">
@@ -436,7 +473,7 @@ const RideDetails = () => {
 
           {/* Right Column */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg border p-6 sticky top-6">
+            <div className="bg-white/90 backdrop-blur-xl rounded-xl shadow-lg border p-6 sticky top-6 hover-lift transition-all duration-300">
               <div className="text-center mb-6 pb-6 border-b">
                 <p className="text-gray-600 mb-1">Price per seat</p>
                 <p className="text-4xl font-bold text-green-600">₹{ride.pricePerSeat}</p>
@@ -467,14 +504,14 @@ const RideDetails = () => {
 
               {/* Status / Action Buttons */}
               {ride.status !== "upcoming" ? (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg text-center mb-4">
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg text-center mb-4 animate-fade-up">
                   Ride is {ride.status}
                 </div>
               ) : isDriver ? (
                 <button
                   onClick={handleStartRide}
                   disabled={bookingActionLoading || ride.passengers?.length === 0}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed hover:-translate-y-0.5"
                 >
                   <PlayCircle className="w-5 h-5" />
                   {bookingActionLoading ? "Starting..." : "Start Ride"}
@@ -483,7 +520,7 @@ const RideDetails = () => {
                 <div className="space-y-3">
                   <button
                     disabled
-                    className="w-full bg-green-100 text-green-700 py-4 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-green-100 text-green-700 py-4 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center gap-2 animate-fade-up"
                   >
                     <CheckCircle className="w-5 h-5" />
                     Booked
@@ -491,7 +528,7 @@ const RideDetails = () => {
                   <button
                     onClick={() => navigate(`/cancel-booking/${id}`, { state: { ride, user } })}
                     disabled={bookingActionLoading}
-                    className="w-full bg-red-50 text-red-600 py-3 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full bg-red-50 text-red-600 py-3 rounded-lg font-medium hover:bg-red-100 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"
                   >
                     <XCircle className="w-4 h-4" />
                     {bookingActionLoading ? "Cancelling..." : "Cancel Booking"}
@@ -501,17 +538,62 @@ const RideDetails = () => {
                 <button
                   onClick={handleBookRide}
                   disabled={bookingActionLoading}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 hover:-translate-y-0.5"
                 >
                   {bookingActionLoading ? "Booking..." : "Book This Ride"}
                 </button>
               ) : (
                 <button
                   disabled
-                  className="w-full bg-gray-300 text-gray-500 py-4 rounded-lg font-semibold cursor-not-allowed"
+                  className="w-full bg-gray-300 text-gray-500 py-4 rounded-lg font-semibold cursor-not-allowed animate-fade-up"
                 >
                   Fully Booked
                 </button>
+              )}
+
+              {canRateRide && (
+                <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 animate-fade-scale">
+                  <h3 className="text-lg font-bold text-amber-900 mb-2">Rate your driver</h3>
+                  <p className="text-sm text-amber-800 mb-4">
+                    Share your experience to help improve future rides.
+                  </p>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setUserRating(star)}
+                        className={`text-3xl transition-all duration-300 hover:scale-110 ${star <= userRating ? "text-yellow-400" : "text-gray-300"}`}
+                        aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={userRatingComment}
+                    onChange={(e) => setUserRatingComment(e.target.value)}
+                    placeholder="Write a short comment (optional)"
+                    className="w-full min-h-24 rounded-lg border border-amber-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleSubmitRating}
+                    disabled={submittingRating}
+                    className="mt-4 w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-60"
+                  >
+                    {submittingRating ? "Submitting..." : "Submit Rating"}
+                  </button>
+                </div>
+              )}
+
+              {!isDriver && isRideCompleted && hasRatedRide && (
+                <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-5 text-green-700 animate-fade-up">
+                  ✓ Thanks for rating this ride.
+                </div>
               )}
 
               {/* Booked Passengers (driver only) */}

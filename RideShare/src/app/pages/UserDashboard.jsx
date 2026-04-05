@@ -143,7 +143,7 @@ const UserDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent"></div>
       </div>
     );
@@ -151,7 +151,7 @@ const UserDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">{error}</h2>
           <Link to="/find-ride" className="text-green-600 hover:text-green-700">
@@ -163,10 +163,10 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="page-shell min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="page-content mb-8 flex flex-col md:flex-row md:items-center md:justify-between animate-page-in">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Welcome back, {user?.name || "Rider"}! 👋
@@ -176,7 +176,7 @@ const UserDashboard = () => {
             </p>
           </div>
           <button
-            className="mt-4 md:mt-0 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center gap-2"
+            className="mt-4 md:mt-0 bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition-all duration-300 flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-lg"
             onClick={() => fetchBookings(false)}
             disabled={refreshing}
             title="Refresh dashboard"
@@ -188,10 +188,16 @@ const UserDashboard = () => {
             )}
             Refresh
           </button>
+          <Link
+            to="/find-ride"
+            className="mt-4 md:mt-0 md:ml-3 inline-flex items-center justify-center bg-white text-green-600 border border-green-200 px-4 py-2 rounded-lg font-semibold hover:bg-green-50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+          >
+            Book a Ride
+          </Link>
         </div>
 
         {/* Ride Activity Card */}
-        <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+        <div className="page-content bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg p-6 mb-8 text-white animate-fade-scale hover-lift animate-gradient-shift">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-2xl font-bold mb-2">Ride Activity</h3>
@@ -203,7 +209,7 @@ const UserDashboard = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-blue-100">Active Ride</span>
                 <CheckCircle className="w-5 h-5" />
@@ -211,7 +217,7 @@ const UserDashboard = () => {
               <p className="text-3xl font-bold">{activeRide ? 1 : 0}</p>
             </div>
 
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-blue-100">Upcoming</span>
                 <Calendar className="w-5 h-5" />
@@ -219,7 +225,7 @@ const UserDashboard = () => {
               <p className="text-3xl font-bold">{upcomingRides.length}</p>
             </div>
 
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-blue-100">Completed</span>
                 <Car className="w-5 h-5" />
@@ -231,7 +237,7 @@ const UserDashboard = () => {
 
         {/* Active Ride Alert */}
         {activeRide && (
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+          <div className="page-content bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 mb-8 text-white animate-fade-scale hover-lift">
             <div className="flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -250,7 +256,7 @@ const UserDashboard = () => {
                 </div>
                 <Link
                   to={`/ride/${activeRide.ride?._id}`}
-                  className="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all whitespace-nowrap"
+                  className="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all duration-300 whitespace-nowrap hover:-translate-y-0.5"
                 >
                   View Details
                 </Link>
@@ -290,7 +296,7 @@ const UserDashboard = () => {
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Link
             to="/find-ride"
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all group"
+            className="bg-white/90 rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
           >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
@@ -311,8 +317,8 @@ const UserDashboard = () => {
           </Link>
 
           <Link
-            to="/my-rides" // You can create a separate My Rides page if needed
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all group"
+            to="/find-ride"
+            className="bg-white/90 rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
           >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
@@ -335,7 +341,7 @@ const UserDashboard = () => {
 
         {/* Spending Summary */}
         {completedCount > 0 && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 mb-8">
+          <div className="page-content bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 mb-8 animate-fade-scale">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">
                 Spending Summary
@@ -346,7 +352,7 @@ const UserDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg p-4 border border-green-100">
+              <div className="bg-white rounded-lg p-4 border border-green-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-5 h-5 text-green-600" />
@@ -363,7 +369,7 @@ const UserDashboard = () => {
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg p-4 border border-green-100">
+              <div className="bg-white rounded-lg p-4 border border-green-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                     <Car className="w-5 h-5 text-blue-600" />
@@ -380,7 +386,7 @@ const UserDashboard = () => {
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg p-4 border border-green-100">
+              <div className="bg-white rounded-lg p-4 border border-green-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                     <Star className="w-5 h-5 text-purple-600" />
@@ -402,7 +408,7 @@ const UserDashboard = () => {
 
         {/* Upcoming Rides */}
         {upcomingRides.length > 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div className="page-content bg-white/90 rounded-xl shadow-sm border border-gray-100 p-6 mb-8 animate-fade-scale">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               Upcoming Rides
             </h2>
@@ -412,7 +418,7 @@ const UserDashboard = () => {
                 return (
                   <div
                     key={booking._id}
-                    className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300 hover:-translate-y-0.5"
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <img
@@ -458,7 +464,7 @@ const UserDashboard = () => {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8 text-center">
+          <div className="page-content bg-white/90 rounded-xl shadow-sm border border-gray-100 p-8 mb-8 text-center animate-fade-scale">
             <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No upcoming rides
@@ -468,7 +474,7 @@ const UserDashboard = () => {
             </p>
             <Link
               to="/find-ride"
-              className="inline-block bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors"
+              className="inline-block bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all duration-300 hover:-translate-y-0.5"
             >
               Find Rides Now
             </Link>
@@ -477,7 +483,7 @@ const UserDashboard = () => {
 
         {/* Recent Rides Summary */}
         {recentRides.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div className="page-content bg-white/90 rounded-xl shadow-sm border border-gray-100 p-6 mb-8 animate-fade-scale">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">
                 Recent Rides
@@ -496,7 +502,7 @@ const UserDashboard = () => {
                 return (
                   <div
                     key={booking._id}
-                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200"
+                    className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-all duration-300 border border-gray-200 hover:-translate-y-0.5"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
