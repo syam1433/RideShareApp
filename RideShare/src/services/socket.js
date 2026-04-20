@@ -1,7 +1,7 @@
 import io from "socket.io-client";
 
 const socketUrlFromEnv = (import.meta.env.VITE_BACKEND_URL || "").trim();
-const defaultSocketUrl = import.meta.env.DEV ? "http://localhost:5000" : "";
+const defaultSocketUrl = import.meta.env.DEV ? "http://localhost:5000" : "https://rideshareapp-1.onrender.com";
 const SOCKET_URL = (socketUrlFromEnv || defaultSocketUrl).replace(/\/$/, "");
 
 let socket = null;

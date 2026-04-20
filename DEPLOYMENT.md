@@ -19,10 +19,10 @@ VITE_BACKEND_URL=http://localhost:5000
 VITE_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 ```
 
-Production value example:
+Production value example for this deployment:
 
 ```env
-VITE_BACKEND_URL=https://rideshare-backend.onrender.com
+VITE_BACKEND_URL=https://rideshareapp-1.onrender.com
 ```
 
 ## 3. Backend Environment
@@ -84,7 +84,7 @@ Environment Variables in Render:
 - `CLIENT_URLS=https://ride-share-app-eta.vercel.app,http://localhost:5173`
 
 After deploy, note backend URL (example):
-- `https://rideshare-backend.onrender.com`
+- `https://rideshareapp-1.onrender.com`
 
 ## 5. Deploy Frontend On Render (Static Site)
 
@@ -96,7 +96,7 @@ Settings:
 - Publish Directory: `dist`
 
 Environment Variables in Render:
-- `VITE_BACKEND_URL=https://rideshare-backend.onrender.com`
+- `VITE_BACKEND_URL=https://rideshareapp-1.onrender.com`
 - `VITE_GOOGLE_MAPS_API_KEY=...`
 
 ## 6. CORS And Connectivity Checklist
@@ -104,8 +104,8 @@ Environment Variables in Render:
 Set backend `CLIENT_URL` exactly to your frontend URL (no trailing slash mismatch).
 
 Example:
-- Frontend URL: `https://rideshare-frontend.onrender.com`
-- Backend `CLIENT_URL`: `https://rideshare-frontend.onrender.com`
+- Frontend URL: `https://ride-share-app-eta.vercel.app`
+- Backend `CLIENT_URL`: `https://ride-share-app-eta.vercel.app`
 
 Verify after deploy:
 - `GET https://<backend>/` returns `{"message":"Server is running"}`

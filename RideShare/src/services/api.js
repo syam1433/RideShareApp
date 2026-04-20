@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const backendUrlFromEnv = (import.meta.env.VITE_BACKEND_URL || "").trim();
-const defaultBackendUrl = import.meta.env.DEV ? "http://localhost:5000" : "";
+const defaultBackendUrl = import.meta.env.DEV ? "http://localhost:5000" : "https://rideshareapp-1.onrender.com";
 const BACKEND_URL = (backendUrlFromEnv || defaultBackendUrl).replace(/\/$/, "");
 const API_BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api` : "/api";
 
