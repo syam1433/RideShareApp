@@ -1,0 +1,11 @@
+2026-02-09 11:33:33 | Offered: 2 | Detected: 0 | Status: NORMAL
+2026-02-09 11:56:22 | Offered: 3 | Detected: 10 | Status: OVERLOADED
+2026-02-13 07:42:35 | Offered: 3 | Detected: 10 | Status: OVERLOADED
+2026-02-13 07:45:31 | Offered: 3 | Detected: 4 | Status: OVERLOADED
+2026-02-13 07:48:23 | Offered: 2 | Detected: 3 | Status: OVERLOADED
+2026-02-13 07:48:47 | Offered: 3 | Detected: 3 | Status: NORMAL
+2026-02-13 14:35:52 | Offered: 3 | Detected: 10 | Status: OVERLOADED
+2026-03-05 18:21:18 | Offered: 2 | Detected: 3 | Status: OVERLOADED
+2026-03-05 18:42:20 | Offered: 2 | Detected: 3 | Status: OVERLOADED
+2026-03-05 18:57:50 | Offered: 6 | Detected: 10 | Status: OVERLOADED
+2026-04-20 21:50:10 | Offered: 1 | Total Detected: 3 | Passengers: 2 | Status: BORDERLINE
