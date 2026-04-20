@@ -87,14 +87,12 @@ const getIO = () => io;
 // Helper function to notify passengers about OTP
 const notifyOTP = (rideId, userIds, otp) => {
   if (io) {
-    // Emit to the ride room
     io.to(rideId).emit("otpSent", { rideId, otp });
-    
-    // Also emit to individual user dashboards
+
     userIds.forEach((userId) => {
-      io.to(`user-${userId}`).emit("otpSent", { rideId, otp });
+      io.to(`user_${userId}`).emit("otpSent", { rideId, otp });
     });
-    
+
     console.log(`OTP notified for ride ${rideId} to users:`, userIds);
   }
 };
@@ -103,11 +101,11 @@ const notifyOTP = (rideId, userIds, otp) => {
 const notifyRideStatusUpdate = (rideId, userIds, status, otp = null) => {
   if (io) {
     io.to(rideId).emit("rideStatusUpdated", { rideId, status, otp });
-    
+
     userIds.forEach((userId) => {
-      io.to(`user-${userId}`).emit("rideStatusUpdated", { rideId, status, otp });
+      io.to(`user_${userId}`).emit("rideStatusUpdated", { rideId, status, otp });
     });
-    
+
     console.log(`Ride status updated for ${rideId}:`, status);
   }
 };

@@ -4,7 +4,7 @@ const path = require("path")
 const bookingController = require("../controllers/bookingController");
 const { protect } = require("../middleware/authMiddleware");
 const multer = require("multer");
-const uploadPath = path.join(__dirname, "../../python/Rideshare_Overloading_Detection/uploads");
+const uploadPath = path.resolve(__dirname, "../../../python/Rideshare_Overloading_Detection/uploads");
 
 
 // Ensure folder exists (good practice)

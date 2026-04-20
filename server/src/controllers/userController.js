@@ -1,42 +1,66 @@
 const User = require("../models/User");
 
-exports.getMe = async (req, res) => {
+exports.getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select(
-      "name email phone avatar role vehicleType vehicleNumber vehicleModel rating totalReviews overloadViolations canCreateRide isBlacklisted blacklistReason blacklistedAt isVerifiedDriver createdAt"
-    );
-
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json(user);
+    return res.json(user);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return next(error);
   }
 };
 
-exports.updateMe = async (req, res) => {
+exports.updateMe = async (req, res, next) => {
   try {
-    const { name, phone, email } = req.body;
+    const updates = { ...req.body };
+    delete updates.password;
+    delete updates.role;
+    delete updates.isBlacklisted;
+    delete updates.canCreateRide;
 
-    const updates = {};
-    if (name) updates.name = name;
-    if (phone) updates.phone = phone;
-    if (email) updates.email = email;
-
-    const user = await User.findByIdAndUpdate(req.user.id, updates, {
-      new: true,
-      runValidators: true,
-    }).select("name email phone avatar role");
-
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json(user);
+    return res.json(user);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return next(error);
+  }
+};
+const User = require("../models/User");
+
+exports.getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json(user);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateMe = async (req, res, next) => {
+  try {
+    const updates = { ...req.body };
+    delete updates.password;
+    delete updates.role;
+    delete updates.isBlacklisted;
+    delete updates.canCreateRide;
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json(user);
+  } catch (error) {
+    return next(error);
   }
 };

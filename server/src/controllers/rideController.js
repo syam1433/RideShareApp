@@ -1,117 +1,214 @@
 const Ride = require("../models/Ride");
-const { generateOTP, sendOTP } = require("../utils/generateOTP");
-const User = require("../models/User");
-const { notifyOTP, notifyRideStatusUpdate } = require("../Config/socket");
 
-const DEFAULT_PICKUP_COORDS = [80.4365, 16.3067]; // Vijayawada [lng, lat]
-const DEFAULT_DEST_COORDS = [80.4365, 16.3067]; // Vijayawada [lng, lat]
-
-const isValidCoordinatePair = (lat, lng) => {
-  return (
-    Number.isFinite(lat) &&
-    Number.isFinite(lng) &&
-    lat >= -90 &&
-    lat <= 90 &&
-    lng >= -180 &&
-    lng <= 180
-  );
-};
-
-// Get all rides
-exports.getAllRides = async (req, res) => {
+exports.getAllRides = async (req, res, next) => {
   try {
-    const { from, to, date, passengers, page = 1, limit = 20 } = req.query;
-
-    // Base query: only show upcoming/active rides
-    const query = { status: { $in: ["upcoming", "active", "pending"] } };
-
-    // Filter by 'from' (case-insensitive partial match)
-    if (from) {
-      query.from = { $regex: from.trim(), $options: "i" };
-    }
-
-    // Filter by 'to'
-    if (to) {
-      query.to = { $regex: to.trim(), $options: "i" };
-    }
-
-    // Filter by date (exact day match)
-    if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(startOfDay);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-
-      query.dateTime = {
-        $gte: startOfDay,
-        $lt: endOfDay,
-      };
-    }
-
-    // Filter by available seats >= requested passengers
-    if (passengers && !isNaN(passengers)) {
-      query.seatsAvailable = { $gte: Number(passengers) };
-    }
-
-    // Pagination
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 20;
-    const skip = (pageNum - 1) * limitNum;
-
-    // Get total count for pagination info
-    const total = await Ride.countDocuments(query);
-
-    const rides = await Ride.find(query)
-      .populate("driver", "name avatar rating vehicleType vehicleNumber vehicleModel")
-      .sort({ dateTime: 1 })
-      .skip(skip)
-      .limit(limitNum);
-
-    res.json({
-      rides,
-      pagination: {
-        currentPage: pageNum,
-        totalPages: Math.ceil(total / limitNum),
-        totalRides: total,
-        hasNext: pageNum * limitNum < total,
-        hasPrev: pageNum > 1
-      }
-    });
-  } catch (err) {
-    console.error("Get all rides error:", err);
-    res.status(500).json({ message: "Failed to fetch rides" });
+    const rides = await Ride.find().populate("driver", "name email role");
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
   }
 };
 
-// Create ride (Driver only)
-exports.createRide = async (req, res) => {
+exports.searchNearbyRides = async (req, res, next) => {
   try {
-    const driver = await User.findById(req.user.id).select("isBlacklisted canCreateRide blacklistReason");
-    if (!driver) {
-      return res.status(404).json({ message: "Driver not found" });
-    }
+    const { from, to } = req.query;
+    const filter = {};
+    if (from) filter.from = new RegExp(from, "i");
+    if (to) filter.to = new RegExp(to, "i");
 
-    if (driver.isBlacklisted || driver.canCreateRide === false) {
-      return res.status(403).json({
-        message: driver.blacklistReason
-          ? `Ride creation blocked: ${driver.blacklistReason}`
-          : "Your account is blacklisted from creating rides",
-      });
-    }
+    const rides = await Ride.find(filter).populate("driver", "name email role");
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
+  }
+};
 
-    const {
-      from,
-      to,
-      viaPoints = [],
-      dateTime,
-      pricePerSeat,
-      seatsAvailable,
-      vehicleType,
-      dlNumber,
-      vehicleNumber,
-      vehicleModel,
-      safetyNote,
-      pickupLat,
+exports.createRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.create({ ...req.body, driver: req.user.id });
+    return res.status(201).json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateRideStatus = async (req, res, next) => {
+  try {
+    const ride = await Ride.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.searchLocations = async (req, res, next) => {
+  try {
+    const { q = "" } = req.query;
+    const rides = await Ride.find({
+      $or: [{ from: new RegExp(q, "i") }, { to: new RegExp(q, "i") }],
+    }).limit(20);
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getMyRides = async (req, res, next) => {
+  try {
+    const rides = await Ride.find({ driver: req.user.id });
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getRideById = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id).populate("driver", "name email role");
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.startRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.findByIdAndUpdate(req.params.id, { status: "active" }, { new: true });
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.verifyPassengerOTP = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json({ success: true, message: "Passenger verified" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.finishRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.findByIdAndUpdate(req.params.id, { status: "completed" }, { new: true });
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+const Ride = require("../models/Ride");
+
+exports.getAllRides = async (req, res, next) => {
+  try {
+    const rides = await Ride.find().populate("driver", "name email role");
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.searchNearbyRides = async (req, res, next) => {
+  try {
+    const { from, to } = req.query;
+    const filter = {};
+    if (from) filter.from = new RegExp(from, "i");
+    if (to) filter.to = new RegExp(to, "i");
+
+    const rides = await Ride.find(filter).populate("driver", "name email role");
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.createRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.create({ ...req.body, driver: req.user.id });
+    return res.status(201).json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateRideStatus = async (req, res, next) => {
+  try {
+    const ride = await Ride.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.searchLocations = async (req, res, next) => {
+  try {
+    const { q = "" } = req.query;
+    const rides = await Ride.find({
+      $or: [
+        { from: new RegExp(q, "i") },
+        { to: new RegExp(q, "i") },
+      ],
+    }).limit(20);
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getMyRides = async (req, res, next) => {
+  try {
+    const rides = await Ride.find({ driver: req.user.id });
+    return res.json(rides);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getRideById = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id).populate("driver", "name email role");
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.startRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.findByIdAndUpdate(req.params.id, { status: "active" }, { new: true });
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.verifyPassengerOTP = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json({ success: true, message: "Passenger verified" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.finishRide = async (req, res, next) => {
+  try {
+    const ride = await Ride.findByIdAndUpdate(req.params.id, { status: "completed" }, { new: true });
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    return res.json(ride);
+  } catch (error) {
+    return next(error);
+  }
+};
       pickupLng,
       destinationLat,
       destinationLng,

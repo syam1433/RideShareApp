@@ -16,7 +16,7 @@ const setSocketIO = (socketIO) => {
 
 // Multer setup – temporary upload
 const fsSync = require("fs");
-const uploadDir = path.join(__dirname, "../../python/Rideshare_Overloading_Detection/uploads");
+const uploadDir = path.resolve(__dirname, "../../../python/Rideshare_Overloading_Detection/uploads");
 
 if (!fsSync.existsSync(uploadDir)) {
   fsSync.mkdirSync(uploadDir, { recursive: true });
@@ -222,7 +222,7 @@ exports.submitCancellation = async (req, res) => {
           1
         );
 
-        const pythonScriptPath = path.join(__dirname, "../../python/Rideshare_Overloading_Detection/main.py");
+        const pythonScriptPath = path.resolve(__dirname, "../../../python/Rideshare_Overloading_Detection/main.py");
 
         // Check script exists
         try {
@@ -463,6 +463,18 @@ exports.createBooking = async (req, res, next) => {
       status: "confirmed",
       paymentStatus: "unpaid",
     });
+
+    if (io && ride.driver) {
+      io.to(`user_${ride.driver.toString()}`).emit("booking_created", {
+        rideId: ride._id,
+        booking: {
+          id: booking._id,
+          passenger: req.user.id,
+          seatsBooked,
+          status: booking.status,
+        },
+      });
+    }
 
     res.status(201).json({
       success: true,

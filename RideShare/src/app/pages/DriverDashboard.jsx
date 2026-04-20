@@ -17,9 +17,11 @@ import {
 import { format } from "date-fns";
 import API from "../../services/api";
 import toast from "react-hot-toast";
+import { initSocket, joinUserDashboard } from "../../services/socket";
 
 const DriverDashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const [driverProfile, setDriverProfile] = useState(null);
   const [rides, setRides] = useState([]);
   const [safetyRecord, setSafetyRecord] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,7 @@ const DriverDashboard = () => {
     if (authLoading) return;
 
     const driverId = user?.id || user?._id;
+    const socket = initSocket();
 
     const fetchDriverData = async () => {
       if (!user || user.role !== "driver") {
@@ -38,6 +41,9 @@ const DriverDashboard = () => {
       }
 
       try {
+        const profileRes = await API.get("/users/me");
+        setDriverProfile(profileRes.data || null);
+
         const ridesRes = await API.get("/rides/my");
         setRides(ridesRes.data || []);
 
@@ -55,19 +61,38 @@ const DriverDashboard = () => {
     };
 
     fetchDriverData();
+
+    if (driverId) {
+      joinUserDashboard(driverId);
+    }
+
+    const refreshOnBookingChange = () => {
+      fetchDriverData();
+    };
+
+    socket.on("booking_created", refreshOnBookingChange);
+    socket.on("booking_cancelled", refreshOnBookingChange);
+    socket.on("rideStatusUpdated", refreshOnBookingChange);
+
+    return () => {
+      socket.off("booking_created", refreshOnBookingChange);
+      socket.off("booking_cancelled", refreshOnBookingChange);
+      socket.off("rideStatusUpdated", refreshOnBookingChange);
+    };
   }, [user, authLoading]);
 
   // Categorize rides
   const upcomingRides = rides.filter(r => ["upcoming", "pending", "active"].includes(r.status));
   const completedRides = rides.filter(r => r.status === "completed");
+  const effectiveDriver = driverProfile || user;
   const latestRideWithVehicleData = rides.find(
     (ride) => ride.vehicleType || ride.vehicleModel || ride.vehicleNumber
   );
 
   const vehicleInfo = {
-    vehicleType: user?.vehicleType || latestRideWithVehicleData?.vehicleType || "Not available",
-    vehicleModel: user?.vehicleModel || latestRideWithVehicleData?.vehicleModel || "Not available",
-    vehicleNumber: user?.vehicleNumber || latestRideWithVehicleData?.vehicleNumber || "Not available",
+    vehicleType: effectiveDriver?.vehicleType || latestRideWithVehicleData?.vehicleType || "Not available",
+    vehicleModel: effectiveDriver?.vehicleModel || latestRideWithVehicleData?.vehicleModel || "Not available",
+    vehicleNumber: effectiveDriver?.vehicleNumber || latestRideWithVehicleData?.vehicleNumber || "Not available",
   };
 
   if (loading) {
@@ -100,13 +125,26 @@ const DriverDashboard = () => {
     <div className="page-shell min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="page-content mb-8 animate-page-in">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.name || "Driver"}! 🚗
-          </h1>
-          <p className="text-gray-600">
-            Your driver dashboard - manage your rides and earnings
-          </p>
+        <div className="page-content mb-8 animate-page-in flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome back, {effectiveDriver?.name || "Driver"}! 🚗
+            </h1>
+            <p className="text-gray-600">
+              Your driver dashboard - manage your rides and earnings
+            </p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 flex items-center gap-3 shadow-sm">
+            <img
+              src={effectiveDriver?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=RideShareDriver"}
+              alt={effectiveDriver?.name || "Driver"}
+              className="w-10 h-10 rounded-full border border-green-100"
+            />
+            <div>
+              <p className="text-sm font-semibold text-gray-900 leading-tight">{effectiveDriver?.name || "Driver"}</p>
+              <p className="text-xs text-gray-500 leading-tight">{effectiveDriver?.vehicleType || "Driver"}</p>
+            </div>
+          </div>
           {user?.isBlacklisted && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 shadow-sm">
               <p className="font-semibold">Account restricted</p>
@@ -122,10 +160,10 @@ const DriverDashboard = () => {
           {[
             {
               label: "Rating",
-              value: user?.rating?.toFixed(1) || "4.8",
+              value: effectiveDriver?.rating?.toFixed(1) || "4.8",
               icon: Star,
               color: "bg-yellow-500",
-              change: "+0.2 this month",
+              change: `${effectiveDriver?.totalReviews || 0} reviews`,
             },
             {
               label: "Completed Rides",

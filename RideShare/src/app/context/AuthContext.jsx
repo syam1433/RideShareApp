@@ -81,11 +81,24 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = (updates = {}) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ...updates,
+        id: updates.id || updates._id || prev.id,
+        _id: updates._id || updates.id || prev._id,
+      };
+    });
+  };
+
   const value = {
     user,
     loading,
     login,
     logout,
+    updateUser,
     isAuthenticated: !!user && !!user.token,
     isDriver: user?.role === "driver",
   };

@@ -11,21 +11,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /app/server
 
 # Install Node dependencies first for better Docker layer caching.
-COPY package*.json ./
+COPY server/package*.json ./
 RUN npm ci --omit=dev
 
 # Install Python dependencies for the overloading model.
-COPY python/Rideshare_Overloading_Detection/requirements.txt ./python/Rideshare_Overloading_Detection/requirements.txt
-RUN pip3 install --no-cache-dir -r python/Rideshare_Overloading_Detection/requirements.txt
+COPY python/Rideshare_Overloading_Detection/requirements.txt /app/python/Rideshare_Overloading_Detection/requirements.txt
+RUN pip3 install --no-cache-dir -r /app/python/Rideshare_Overloading_Detection/requirements.txt
 
 # Copy app source.
-COPY . .
+COPY server/ ./
+COPY python/ /app/python/
 
 # Ensure runtime folders exist for uploads/log outputs.
-RUN mkdir -p uploads/temp python/Rideshare_Overloading_Detection/uploads output/logs output/results
+RUN mkdir -p /app/server/uploads/temp /app/python/Rideshare_Overloading_Detection/uploads /app/python/Rideshare_Overloading_Detection/output/logs /app/python/Rideshare_Overloading_Detection/output/results
 
 ENV NODE_ENV=production
 ENV PYTHON_BIN=python3

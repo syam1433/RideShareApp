@@ -50,6 +50,14 @@ const RideDetails = () => {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [hasRatedRide, setHasRatedRide] = useState(false);
 
+  const isPassengerBooked = (passengers = [], passengerId) => {
+    const targetId = String(passengerId || "");
+    return passengers.some((passenger) => {
+      if (!passenger) return false;
+      return String(passenger._id || passenger) === targetId;
+    });
+  };
+
   useEffect(() => {
     const fetchRide = async () => {
       if (!id) {
@@ -65,7 +73,7 @@ const RideDetails = () => {
         if (res.data.otp) setOtpSent(true);
 
         // Safe passenger check using string comparison
-        if (user?.id && res.data.passengers?.some(p => String(p._id) === String(user.id))) {
+        if (user?.id && isPassengerBooked(res.data.passengers, user.id)) {
           setIsBookedByMe(true);
         }
 
@@ -135,7 +143,7 @@ const RideDetails = () => {
       setVerifiedCount(res.data.verifiedPassengers?.length || 0);
 
       // Re-check if booked (in case of refresh after booking/cancel)
-      if (user?.id && res.data.passengers?.some(p => String(p._id) === String(user.id))) {
+      if (user?.id && isPassengerBooked(res.data.passengers, user.id)) {
         setIsBookedByMe(true);
       } else {
         setIsBookedByMe(false);
@@ -214,15 +222,21 @@ const RideDetails = () => {
 
     setVerifying(true);
     try {
-      await API.post(`/rides/${id}/verify-passenger`, {
+      const res = await API.post(`/rides/${id}/verify-passenger`, {
         otp: otpInput,
         passengerId: selectedPassengerId || undefined,
       });
+      
+      // Update ride data and verified count immediately from response
+      if (res.data.ride) {
+        setRide(res.data.ride);
+        setVerifiedCount(res.data.verifiedCount || res.data.ride.verifiedPassengers?.length || 0);
+      }
+      
       toast.success("Passenger verified successfully!");
       setOtpInput("");
       setSelectedPassengerId("");
       setShowOtpSection(false);
-      await refreshRide();
     } catch (err) {
       toast.error(err.response?.data?.message || "Invalid OTP");
     } finally {
@@ -328,7 +342,7 @@ const RideDetails = () => {
   const showFinishButton = isDriver && isRideActive && allVerified;
   const verifiedPassengerIds = new Set((ride.verifiedPassengers || []).map((pid) => String(pid)));
   const unverifiedPassengers = (ride.passengers || []).filter(
-    (passenger) => !verifiedPassengerIds.has(String(passenger._id))
+    (passenger) => !verifiedPassengerIds.has(String(passenger._id || passenger))
   );
 
   return (
@@ -670,11 +684,16 @@ const RideDetails = () => {
                             onChange={(e) => setSelectedPassengerId(e.target.value)}
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none"
                           >
-                            {unverifiedPassengers.map((passenger) => (
-                              <option key={passenger._id} value={String(passenger._id)}>
-                                {passenger.name}
-                              </option>
-                            ))}
+                            <option value="">-- Select a passenger --</option>
+                            {unverifiedPassengers.map((passenger) => {
+                              const passengerId = String(passenger._id || passenger);
+                              const passengerName = passenger?.name || `Passenger ${passengerId.slice(-6)}`;
+                              return (
+                                <option key={passengerId} value={passengerId}>
+                                  {passengerName}
+                                </option>
+                              );
+                            })}
                           </select>
                         </div>
                       ) : (

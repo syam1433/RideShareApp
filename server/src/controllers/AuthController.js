@@ -1,4 +1,347 @@
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const { generateAccessToken, generateRefreshToken } = require("../services/tokenService");
+const otpService = require("../services/otpService");
+
+const buildAuthResponse = (user) => ({
+  token: generateAccessToken(user),
+  refreshToken: generateRefreshToken(user),
+  role: user.role,
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    vehicleType: user.vehicleType,
+    vehicleNumber: user.vehicleNumber,
+    vehicleModel: user.vehicleModel,
+    avatar: user.avatar,
+    isBlacklisted: user.isBlacklisted,
+    canCreateRide: user.canCreateRide,
+  },
+});
+
+exports.register = async (req, res, next) => {
+  try {
+    const { name, email, phone, password, role, vehicleType, vehicleNumber, vehicleModel } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim(),
+      password: hashedPassword,
+      role: role === "driver" ? "driver" : "user",
+      vehicleType: vehicleType || "Bike",
+      vehicleNumber: vehicleNumber || undefined,
+      vehicleModel: vehicleModel || undefined,
+    });
+
+    return res.status(201).json(buildAuthResponse(user));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    return res.json(buildAuthResponse(user));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.sendOTP = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number is required" });
+    }
+
+    otpService.sendOTP(phone);
+    return res.json({ success: true, message: "OTP sent" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({ message: "Phone and OTP are required" });
+    }
+
+    const isValid = otpService.verifyOTP(phone, otp);
+    if (!isValid) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    return res.json({ success: true, message: "OTP verified" });
+  } catch (error) {
+    return next(error);
+  }
+};const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+const { generateAccessToken, generateRefreshToken } = require("../services/tokenService");
+const otpService = require("../services/otpService");
+
+const buildAuthResponse = (user) => ({
+  token: generateAccessToken(user),
+  refreshToken: generateRefreshToken(user),
+  role: user.role,
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    vehicleType: user.vehicleType,
+    vehicleNumber: user.vehicleNumber,
+    vehicleModel: user.vehicleModel,
+    avatar: user.avatar,
+    isBlacklisted: user.isBlacklisted,
+    canCreateRide: user.canCreateRide,
+  },
+});
+
+exports.register = async (req, res, next) => {
+  try {
+    const { name, email, phone, password, role, vehicleType, vehicleNumber, vehicleModel } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim(),
+      password: hashedPassword,
+      role: role === "driver" ? "driver" : "user",
+      vehicleType: vehicleType || "Bike",
+      vehicleNumber: vehicleNumber || undefined,
+      vehicleModel: vehicleModel || undefined,
+    });
+
+    return res.status(201).json(buildAuthResponse(user));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    return res.json(buildAuthResponse(user));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.sendOTP = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number is required" });
+    }
+
+    otpService.sendOTP(phone);
+    return res.json({ success: true, message: "OTP sent" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({ message: "Phone and OTP are required" });
+    }
+
+    const isValid = otpService.verifyOTP(phone, otp);
+    if (!isValid) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    return res.json({ success: true, message: "OTP verified" });
+  } catch (error) {
+    return next(error);
+  }
+};
+const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+const { generateAccessToken, generateRefreshToken } = require("../services/tokenService");
+const otpService = require("../services/otpService");
+
+const buildAuthResponse = (user) => ({
+  token: generateAccessToken(user),
+  refreshToken: generateRefreshToken(user),
+  role: user.role,
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    vehicleType: user.vehicleType,
+    vehicleNumber: user.vehicleNumber,
+    vehicleModel: user.vehicleModel,
+    avatar: user.avatar,
+    isBlacklisted: user.isBlacklisted,
+    canCreateRide: user.canCreateRide,
+  },
+});
+
+exports.register = async (req, res, next) => {
+  try {
+    const {
+      name,
+      email,
+      phone,
+      password,
+      role,
+      vehicleType,
+      vehicleNumber,
+      vehicleModel,
+    } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim(),
+      password: hashedPassword,
+      role: role === "driver" ? "driver" : "user",
+      vehicleType: vehicleType || "Bike",
+      vehicleNumber: vehicleNumber || undefined,
+      vehicleModel: vehicleModel || undefined,
+    });
+
+    return res.status(201).json(buildAuthResponse(user));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    return res.json(buildAuthResponse(user));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.sendOTP = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number is required" });
+    }
+
+    otpService.sendOTP(phone);
+    return res.json({ success: true, message: "OTP sent" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({ message: "Phone and OTP are required" });
+    }
+
+    const isValid = otpService.verifyOTP(phone, otp);
+    if (!isValid) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    return res.json({ success: true, message: "OTP verified" });
+  } catch (error) {
+    return next(error);
+  }
+};const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendOTP, verifyOTP } = require("../services/otpService");
@@ -150,129 +493,4 @@ exports.register = [
       console.error("Registration error:", err);
       
       // Handle MongoDB duplicate key error
-      if (err.code === 11000) {
-        if (err.keyPattern && err.keyPattern.phone) {
-          return res.status(400).json({ message: "Phone number already registered. Please use a different phone number." });
-        }
-        if (err.keyPattern && err.keyPattern.email) {
-          return res.status(400).json({ message: "Email already registered. Please use a different email." });
-        }
-        return res.status(400).json({ message: "Duplicate registration data. Please check your information." });
-      }
-      
-      if (err.message.includes("Only JPEG, PNG, and PDF")) {
-        return res.status(400).json({ message: err.message });
-      }
-      
-      res.status(500).json({ message: "Server error during registration" });
-    }
-  },
-];
-
-// ================= LOGIN =================
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const payload = {
-      id: user._id,
-      role: user.role,
     };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.json({
-      token,
-      role: user.role,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        rating: user.rating,
-        totalReviews: user.totalReviews,
-        overloadViolations: user.overloadViolations,
-        canCreateRide: user.canCreateRide,
-        isBlacklisted: user.isBlacklisted,
-        blacklistReason: user.blacklistReason,
-        blacklistedAt: user.blacklistedAt,
-        // add vehicle fields if driver
-        ...(user.role === "driver" && {
-          vehicleType: user.vehicleType,
-          vehicleNumber: user.vehicleNumber,
-          vehicleModel: user.vehicleModel,
-        }),
-      },
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// ================= SEND OTP =================
-exports.sendOTP = async (req, res, next) => {
-  try {
-    const { phone } = req.body;
-
-    if (!phone) {
-      return res.status(400).json({ message: "Phone is required" });
-    }
-
-    sendOTP(phone);
-
-    res.json({ success: true, message: "OTP sent successfully" });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ================= VERIFY OTP =================
-exports.verifyOTP = async (req, res, next) => {
-  try {
-    const { phone, otp } = req.body;
-
-    const isValid = verifyOTP(phone, otp);
-
-    if (!isValid) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
-
-    let user = await User.findOne({ phone });
-
-    if (!user) {
-      user = await User.create({ phone });
-    }
-
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.json({
-      success: true,
-      token,
-      role: user.role,
-    });
-  } catch (error) {
-    next(error);
-  }
-};

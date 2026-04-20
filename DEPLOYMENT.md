@@ -6,7 +6,7 @@ This project runs the Node.js backend and Python YOLO model in the same backend 
 
 - Frontend: `RideShare/` (Vite app)
 - Backend API + Socket.IO: `server/` (Express)
-- Python model invoked by Node: `server/python/Rideshare_Overloading_Detection/main.py`
+- Python model invoked by Node: `python/Rideshare_Overloading_Detection/main.py`
 
 Because your backend calls Python using `spawn(...)`, deploy Node and Python together in one Render Web Service.
 
@@ -52,6 +52,8 @@ This repo now includes:
 - `server/Dockerfile`
 - `server/.dockerignore`
 - `render.yaml`
+
+The Render Docker build should use the repository root as the build context so the backend can access the top-level `python/` folder.
 
 ### Option A: Blueprint deploy (recommended)
 

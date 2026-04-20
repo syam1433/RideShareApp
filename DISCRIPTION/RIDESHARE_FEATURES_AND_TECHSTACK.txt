@@ -648,7 +648,7 @@ Endpoints:
 └── GET /api/safety/report (Generate report)
 
 Python Script Path:
-/server/python/Rideshare_Overloading_Detection/main.py
+/python/Rideshare_Overloading_Detection/main.py
 
 ================================================================================
                     FEATURE #12: NOTIFICATIONS SYSTEM

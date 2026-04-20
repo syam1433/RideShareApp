@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -21,8 +21,18 @@ import API from "../../services/api";
 import { format } from "date-fns";
 
 const Profile = () => {
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const sampleAvatars = [
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=RiderOne",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=SafeDriver",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=CityCommuter",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=NightRide",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=WeekendTrip",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=EcoTraveler",
+  ];
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -88,11 +98,54 @@ const recentActivity = [
     try {
       const res = await API.patch("/users/me", formData);
       setProfile(res.data);
+      updateUser(res.data);
       setIsEditing(false);
       toast.success("Profile updated successfully!");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update profile");
     }
+  };
+
+  const handleSelectSampleAvatar = async (avatarUrl) => {
+    try {
+      const res = await API.patch("/users/me", { avatar: avatarUrl });
+      setProfile(res.data);
+      updateUser(res.data);
+      toast.success("Profile image updated");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update profile image");
+    }
+  };
+
+  const handleAvatarFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image size should be less than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const imageDataUrl = String(reader.result || "");
+        const res = await API.patch("/users/me", { avatar: imageDataUrl });
+        setProfile(res.data);
+        updateUser(res.data);
+        toast.success("Uploaded profile image successfully");
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to upload profile image");
+      }
+    };
+    reader.readAsDataURL(file);
+
+    event.target.value = "";
   };
 
   const handleLogout = () => {
@@ -146,9 +199,20 @@ const recentActivity = [
                     alt={profile?.name}
                     className="w-32 h-32 rounded-full border-4 border-green-100 mx-auto"
                   />
-                  <button className="absolute bottom-0 right-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white hover:bg-green-600 transition-colors">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white hover:bg-green-600 transition-colors"
+                    title="Upload profile image"
+                  >
                     <Camera className="w-5 h-5" />
                   </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileChange}
+                    className="hidden"
+                  />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mt-4">
                   {profile?.name || "User"}
@@ -177,6 +241,32 @@ const recentActivity = [
                     <span className="text-sm font-medium">Verified Driver</span>
                   </div>
                 )}
+
+                <div className="mt-5 text-left">
+                  <p className="text-sm text-gray-600 mb-2">Choose a sample profile image</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {sampleAvatars.map((avatarUrl) => (
+                      <button
+                        key={avatarUrl}
+                        onClick={() => handleSelectSampleAvatar(avatarUrl)}
+                        className={`rounded-full border-2 p-0.5 transition-colors ${
+                          profile?.avatar === avatarUrl
+                            ? "border-green-500"
+                            : "border-transparent hover:border-green-300"
+                        }`}
+                        title="Use this avatar"
+                      >
+                        <img src={avatarUrl} alt="Sample avatar" className="w-12 h-12 rounded-full" />
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-3 w-full text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg"
+                  >
+                    Upload your own image
+                  </button>
+                </div>
               </div>
 
               {/* Member Since */}
